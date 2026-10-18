@@ -168,6 +168,18 @@ func updateDiskOwner(ids []string) (usb string, ok bool, detail string) {
 	return "", false, dev
 }
 
+// shortID shortens the last part of a device instance id, which is the
+// device's serial number when it has one (USB\VID_19F7&PID_004F\IR0012345
+// becomes USB\VID_19F7&PID_004F\IR00…), so that a log can be shared.
+// Matching always uses the whole id.
+func shortID(id string) string {
+	i := strings.LastIndexByte(id, '\\')
+	if strings.Count(id, `\`) < 2 || len(id)-i-1 <= 4 {
+		return id
+	}
+	return id[:i+5] + "…"
+}
+
 // isRodeApp reports whether a process image name is one of RØDE's desktop
 // apps that talk to the RØDECaster over USB (RODECasterApp.exe, RØDE Central).
 func isRodeApp(exe string) bool {
@@ -221,7 +233,7 @@ func nativeRun(ctx context.Context, sys nativeSys, o Options, p *Plan) error {
 		return err
 	}
 	if diskUSB != "" {
-		fmt.Fprintf(out, "update disk: %s on %s\n", disk, diskUSB)
+		fmt.Fprintf(out, "update disk: %s on %s\n", disk, shortID(diskUSB))
 	} else {
 		fmt.Fprintf(out, "update disk: %s (given, not checked)\n", disk)
 	}
@@ -367,7 +379,7 @@ func judgeVolume(sys nativeSys, v volume, want string) (owner, reason string, re
 	}
 	usb, ok, detail := updateDiskOwner(ids)
 	if !ok {
-		return "", "it belongs to " + detail + ", not to a RØDECaster Duo in update mode", false
+		return "", "it belongs to " + shortID(detail) + ", not to a RØDECaster Duo in update mode", false
 	}
 	return usb, "", false
 }

@@ -6,6 +6,17 @@ may break compatibility).
 
 ## 0.5.1 - Unreleased
 
+### Changed
+- Flashing from Windows worked on a real Duo for the first time (firmware 1.7.3 to a
+  patched 1.7.6, then SSH with the added key); the READMEs, docs/enable-ssh.md and the
+  setup window say so. Flashing from Linux is still untried on hardware.
+- The setup window's flash card: *Copy only* is now *Dry run (copy only)*, with a note
+  that *Flash…* does the whole run by itself and that switching the device off and on
+  after a dry run installs nothing.
+- Flash logs show only the first characters of serial numbers in device ids (the
+  Duo's and those of other drives), so a log can be shared; matching still uses the
+  whole id.
+
 ## 0.5.0 - 2026-10-18
 
 First release as its own repository. The tools come from rcplug 0.4.0 (wizard and

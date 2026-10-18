@@ -19,8 +19,8 @@ the others as yours.
 >   separate, confirmed step on **your own** Windows or Linux computer with the
 >   device on USB (setup GUI step 3, or `rcplug-flash`). It follows the
 >   `rodecaster-duo-ssh` procedure: on Linux it runs that tool's bundled
->   scripts, on Windows it does the same steps itself. The flash step has not
->   been tested by the rcplug authors on real hardware — proceed deliberately.
+>   scripts, on Windows it does the same steps itself. The flash step has been
+>   tried once on a real Duo (from Windows), not yet from Linux — proceed deliberately.
 
 This is your decision for your own device. If you would rather not touch the
 firmware, you can still run and explore everything against the simulator
@@ -164,8 +164,12 @@ Then what the system needs:
 
 **In the setup GUI** (on Windows and Linux), card 3 "Flash over USB" takes the output
 folder of step 2 (it is filled in after *Build image*) and shows each check.
-*Copy only* stages the archive and stops. *Flash…* opens a confirmation where
-you type `flash`; the server refuses a flash request without that word. While a
+*Flash…* does the whole run by itself (update mode, copy, flash) after a
+confirmation where you type `flash`; the server refuses a flash request without
+that word. *Dry run (copy only)* is optional: it stops after copying, so it tests
+everything up to the flash itself and installs nothing. Switch the device off and
+on afterwards; it starts with its current firmware (a restart does not install the
+copied archive, and the next update mode formats the update disk again). While a
 run is going, the log streams live and the window refuses to quit; there is no
 cancel button, because stopping the scripts half-way would only leave the
 update disk mounted or the device mid-flash. After a run, check again before
@@ -274,15 +278,19 @@ against a simulated device and system in the unit tests (which CI runs on
 Windows too), and the Windows build under Wine against a virtual Duo (Linux `uhid`)
 with the HID report descriptor from the 1.7.6 firmware, which acks `M`/`U`,
 re-enumerates in update mode and serves a FAT update image: the reports reach
-it byte for byte as from the Linux scripts, and the archive arrives intact. What
-Wine cannot show is how Windows mounts the real update disk.
+it byte for byte as from the Linux scripts, and the archive arrives intact.
+
+**On real hardware** the Windows path has worked once (a Duo from firmware 1.7.3 to
+a patched 1.7.6): the Duo showed up as product `0050` (HID interface `MI_09`), after
+`M` as `004F` with an unlabelled FAT update disk of 273 MB, the 163 MB archive was
+copied and flushed, `U` was acknowledged, and the device came back with the new
+firmware and SSH access with the added key.
 
 Steps 1 and 2 — fetching RØDE's published image and offline tar manipulation
 with no secrets — are pure Go that rcplug tests directly.
 
-The flash step has **not** been tested by the rcplug authors on real hardware,
-on Linux or on Windows; the device is never touched from the build/CI
-environment. Credit for the
+Flashing **from Linux** has not been tried on real hardware yet; the device is
+never touched from the build/CI environment. Credit for the
 research and the flash tooling goes to
 [nicewrld](https://hhh.hn/rodecaster-duo-fw/) and
 [rodecaster-duo-ssh](https://github.com/Guid-Lab/rodecaster-duo-ssh) (MIT).

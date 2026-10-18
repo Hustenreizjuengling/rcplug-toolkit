@@ -15,9 +15,9 @@ aktualisieren, Plugins hinzufügen, Diagnose holen, deinstallieren.**
 English: [README.md](README.md)
 
 > **Stand: früh und inoffiziell.** Getestet gegen die Original-Firmware des Duo (1.7.6
-> und 1.7.3), mit simulierten Geräten und unter Emulation. **Das Flashen wurde an einem
-> echten Gerät noch nicht ausprobiert.** Firmware zu verändern geschieht auf eigene
-> Gefahr. rcplug hat nichts mit RØDE zu tun und wird von RØDE nicht unterstützt.
+> und 1.7.3), mit simulierten Geräten und unter Emulation. **Geflasht wurde bisher einmal an
+> einem echten Duo** (von Windows aus, 1.7.3 auf 1.7.6), von Linux aus noch nicht.
+> Firmware zu verändern geschieht auf eigene Gefahr. rcplug hat nichts mit RØDE zu tun und wird von RØDE nicht unterstützt.
 
 ## ⚠ Haftungsausschluss: Nutzung auf eigene Gefahr
 

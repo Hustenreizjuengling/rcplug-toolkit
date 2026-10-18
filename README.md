@@ -16,7 +16,8 @@ Deutsch: [README.de.md](README.de.md)
 
 > **Status: early and unofficial.** Everything has been tested against the stock Duo
 > firmware images (1.7.6 and 1.7.3), simulated devices and under emulation. **Flashing
-> has not been tried on a real device yet.** Modifying firmware is at your own risk.
+> has been tried once on a real Duo** (from Windows, 1.7.3 to 1.7.6), not yet from Linux.
+> Modifying firmware is at your own risk.
 > rcplug is not affiliated with or endorsed by RØDE.
 
 ## ⚠ Disclaimer: use at your own risk

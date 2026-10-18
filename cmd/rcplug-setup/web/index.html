@@ -141,6 +141,7 @@
     <ul class="checks" id="flashChecks" hidden></ul>
     <p class="hint" id="flashState"></p>
     <div class="log" id="flashUdev" hidden></div>
+    <p class="hint" data-t="flashHow"></p>
     <div class="row"><button id="btnStage" data-t="flashStage" disabled></button><button class="danger" id="btnFlash" data-t="flashGo" disabled></button></div>
     <div class="log" id="flashLog" hidden></div>
   </section>
@@ -217,16 +218,17 @@ const T = {
     quit: 'Quit', langName: 'Deutsch', confirmUninstall: 'Remove rcplug and all plugin data from the device?',
     genDone: 'Key created. Public key:', built: 'Image ready:', flashNext: 'Next: flash it in step 3.', needConnectFirst: 'Connect to the device first (step 1).',
     flashTitle: 'Flash over USB', flashDesc: 'Puts the image from step 2 onto the device: switches it into update mode, copies archive.tar.gz onto its update disk and, only if you confirm, flashes it and reboots. Needs the Duo on USB and Windows or Linux. Follows the procedure of the rodecaster-duo-ssh tool: on Linux its bundled scripts (Python 3), on Windows the same steps built in — close the RØDECaster App first.',
-    flashBanner: 'Flashing overwrites the device’s inactive firmware partition and reboots it. The Duo keeps two partitions (A/B), so a bad image still leaves the other one bootable — but do not switch it off or unplug it while it flashes. The rcplug authors have not tested this step on real hardware yet. This is your decision for your own device.',
+    flashBanner: 'Flashing overwrites the device’s inactive firmware partition and reboots it. The Duo keeps two partitions (A/B), so a bad image still leaves the other one bootable — but do not switch it off or unplug it while it flashes. So far it has been tried once on a real Duo (from Windows, firmware 1.7.3 to 1.7.6); flashing from Linux has not been tried on hardware yet. This is your decision for your own device.',
     flashDir: 'Folder with archive.tar.gz and archive.md5 (from step 2)', flashCheck: 'Check', flashChecking: 'Checking the archive and the device…',
     ckSystem: 'System', ckArchive: 'Archive', ckImage: 'Image', ckDevice: 'Device on USB', ckAccess: 'HID access', ckMount: 'Update disk', ckPython: 'Python', ckApp: 'RØDE app', keysWord: 'SSH key(s)',
     flashReady: 'Ready. Nothing has been sent to the device yet.', flashNotReady: 'Not ready yet: fix the items marked ✗, then check again.',
     flashUnsupported: 'Flashing works on Windows and Linux with the device on USB, not on this system yet. Here you can check the folder; then run rcplug-setup (or rcplug-flash) on a Windows or Linux computer.',
     flashUdev: 'Your user may not talk to the device yet. Install the udev rule once (in a terminal), unplug and replug the device, then check again:',
-    flashStage: 'Copy only (no flash)', flashGo: 'Flash…', confirmStage: 'Switch the device into update mode (audio stops) and copy the archive onto it? Nothing is flashed.',
+    flashStage: 'Dry run (copy only)', flashGo: 'Flash…', confirmStage: 'Dry run: switch the device into update mode (audio stops) and copy the archive onto it? Nothing is flashed. Afterwards switch the device off and on again.',
+    flashHow: '“Flash…” does everything in one go: update mode, copy, flash. The dry run is optional: it tests everything up to the flash itself and installs nothing; afterwards switch the device off and on, and it starts with its current firmware.',
     flashConfirmTitle: 'Flash the firmware now?', flashConfirmText: 'The device writes this image to its inactive partition and reboots. Keep it switched on and connected until it has restarted (a few minutes). Once started, this cannot be stopped.',
     flashTypeWord: 'Type flash to confirm', flashNow: 'Flash now', flashRunning: 'running — do not close this window, switch the device off or unplug it',
-    flashStaged: 'Copied onto the device; nothing was flashed. The device stays in update mode: switch it off and on again before the next run.',
+    flashStaged: 'Dry run done: the archive reached the device; nothing was flashed. Now switch the device off and on again: it starts unchanged with its current firmware (restarting installs nothing). To flash, check again and use “Flash…”, which copies once more and flashes.',
     flashDone: 'Flash command sent. The device now writes the firmware and reboots (a few minutes) — leave it on. Then connect in step 1 with your private key. The device has a new SSH host key afterwards; if ssh complains about it: ssh-keygen -R <address>',
     flashFailed: 'The run failed:', flashStuck: 'If the device stays in update mode, switch it off and on again.', flashLost: 'Lost contact with the setup program.',
   },
@@ -249,16 +251,17 @@ const T = {
     quit: 'Beenden', langName: 'English', confirmUninstall: 'rcplug und alle Plugin-Daten vom Gerät entfernen?',
     genDone: 'Schlüssel erstellt. Öffentlicher Schlüssel:', built: 'Abbild fertig:', flashNext: 'Weiter: in Schritt 3 flashen.', needConnectFirst: 'Zuerst mit dem Gerät verbinden (Schritt 1).',
     flashTitle: 'Per USB flashen', flashDesc: 'Bringt das Abbild aus Schritt 2 aufs Gerät: schaltet es in den Update-Modus, kopiert archive.tar.gz auf sein Update-Laufwerk und flasht es – nur nach deiner Bestätigung – mit anschließendem Neustart. Braucht den Duo am USB und Windows oder Linux. Folgt dem Ablauf des Tools rodecaster-duo-ssh: unter Linux mit dessen mitgelieferten Skripten (Python 3), unter Windows mit denselben Schritten eingebaut – vorher die RØDECaster App schließen.',
-    flashBanner: 'Flashen überschreibt die inaktive Firmware-Partition des Geräts und startet es neu. Der Duo hat zwei Partitionen (A/B), ein fehlerhaftes Abbild lässt die andere also startfähig – trotzdem das Gerät beim Flashen nicht ausschalten oder abziehen. Die rcplug-Autoren haben diesen Schritt noch nicht an echter Hardware getestet. Das ist deine Entscheidung für dein eigenes Gerät.',
+    flashBanner: 'Flashen überschreibt die inaktive Firmware-Partition des Geräts und startet es neu. Der Duo hat zwei Partitionen (A/B), ein fehlerhaftes Abbild lässt die andere also startfähig – trotzdem das Gerät beim Flashen nicht ausschalten oder abziehen. Bisher wurde das einmal an einem echten Duo ausprobiert (von Windows aus, Firmware 1.7.3 auf 1.7.6); vom Linux-Rechner aus wurde noch nicht an echter Hardware geflasht. Das ist deine Entscheidung für dein eigenes Gerät.',
     flashDir: 'Ordner mit archive.tar.gz und archive.md5 (aus Schritt 2)', flashCheck: 'Prüfen', flashChecking: 'Prüfe Archiv und Gerät…',
     ckSystem: 'System', ckArchive: 'Archiv', ckImage: 'Abbild', ckDevice: 'Gerät am USB', ckAccess: 'HID-Zugriff', ckMount: 'Update-Laufwerk', ckPython: 'Python', ckApp: 'RØDE-App', keysWord: 'SSH-Schlüssel',
     flashReady: 'Bereit. Bisher wurde nichts an das Gerät gesendet.', flashNotReady: 'Noch nicht bereit: die mit ✗ markierten Punkte beheben, dann erneut prüfen.',
     flashUnsupported: 'Flashen geht unter Windows und Linux mit dem Gerät am USB, auf diesem System noch nicht. Hier kannst du den Ordner prüfen; dann rcplug-setup (oder rcplug-flash) auf einem Windows- oder Linux-Rechner starten.',
     flashUdev: 'Dein Benutzer darf noch nicht mit dem Gerät sprechen. Einmalig die udev-Regel installieren (im Terminal), das Gerät ab- und wieder anstecken, dann erneut prüfen:',
-    flashStage: 'Nur kopieren (nicht flashen)', flashGo: 'Flashen…', confirmStage: 'Das Gerät in den Update-Modus schalten (Audio stoppt) und das Archiv daraufkopieren? Es wird nichts geflasht.',
+    flashStage: 'Probelauf (nur kopieren)', flashGo: 'Flashen…', confirmStage: 'Probelauf: das Gerät in den Update-Modus schalten (Audio stoppt) und das Archiv daraufkopieren? Es wird nichts geflasht. Danach das Gerät aus- und wieder einschalten.',
+    flashHow: '„Flashen…“ macht alles in einem Durchgang: Update-Modus, kopieren, flashen. Der Probelauf ist freiwillig: Er testet alles bis vor das Flashen und installiert nichts; danach das Gerät aus- und wieder einschalten, es startet mit seiner bisherigen Firmware.',
     flashConfirmTitle: 'Firmware jetzt flashen?', flashConfirmText: 'Das Gerät schreibt dieses Abbild in seine inaktive Partition und startet neu. Lass es eingeschaltet und angeschlossen, bis es neu gestartet ist (einige Minuten). Einmal gestartet, lässt sich das nicht abbrechen.',
     flashTypeWord: 'Zur Bestätigung flash eintippen', flashNow: 'Jetzt flashen', flashRunning: 'läuft – dieses Fenster nicht schließen, das Gerät nicht ausschalten oder abziehen',
-    flashStaged: 'Aufs Gerät kopiert; es wurde nichts geflasht. Das Gerät bleibt im Update-Modus: vor dem nächsten Durchlauf aus- und wieder einschalten.',
+    flashStaged: 'Probelauf fertig: Das Archiv ist auf dem Gerät angekommen, geflasht wurde nichts. Jetzt das Gerät aus- und wieder einschalten: Es startet unverändert mit seiner bisherigen Firmware (ein Neustart installiert nichts). Zum Flashen danach erneut „Prüfen“ und „Flashen…“ – das kopiert noch einmal und flasht.',
     flashDone: 'Flash-Befehl gesendet. Das Gerät schreibt jetzt die Firmware und startet neu (einige Minuten) – eingeschaltet lassen. Danach in Schritt 1 mit deinem privaten Schlüssel verbinden. Das Gerät hat dann einen neuen SSH-Host-Key; falls ssh sich darüber beschwert: ssh-keygen -R <adresse>',
     flashFailed: 'Der Vorgang ist fehlgeschlagen:', flashStuck: 'Falls das Gerät im Update-Modus bleibt, aus- und wieder einschalten.', flashLost: 'Verbindung zum Setup-Programm verloren.',
   },

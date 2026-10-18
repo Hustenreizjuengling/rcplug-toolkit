@@ -215,7 +215,10 @@ func TestNativeStageOnly(t *testing.T) {
 	if got := strings.Join(f.events, ","); got != `M,release E:\,unlock E:\` {
 		t.Fatalf("events = %s", got)
 	}
-	for _, want := range []string{"sending 'M'", `update disk: E:\ (no label, FAT, 273 MB, 280 MB free) on USB\VID_19F7&PID_004F\RD0000000`, "100%", "archive staged on device.", "staged only"} {
+	if strings.Contains(log, "RD0000000") {
+		t.Errorf("the log shows the device's serial number:\n%s", log)
+	}
+	for _, want := range []string{"sending 'M'", `update disk: E:\ (no label, FAT, 273 MB, 280 MB free) on USB\VID_19F7&PID_004F\RD00…`, "100%", "archive staged on device.", "staged only"} {
 		if !strings.Contains(log, want) {
 			t.Errorf("log lacks %q:\n%s", want, log)
 		}
@@ -537,6 +540,22 @@ func TestDeviceModel(t *testing.T) {
 	for pid, want := range map[uint16]string{0x0095: "duo", 0x004f: "duo", 0x0050: "duo", 0x0037: "pro2", 0x0030: "pro2", 0x0038: ""} {
 		if got := (Device{Product: pid}).Model(); got != want {
 			t.Errorf("Model(%#04x) = %q, want %q", pid, got, want)
+		}
+	}
+}
+
+// Logs show only the start of a serial number; the ids used for matching are
+// never shortened.
+func TestShortIDHidesSerialNumbers(t *testing.T) {
+	for in, want := range map[string]string{
+		`USB\VID_19F7&PID_004F\IR0012345`:                      `USB\VID_19F7&PID_004F\IR00…`,
+		`USBSTOR\DISK&VEN_SANDISK&PROD_ULTRA\4C530001231122&0`: `USBSTOR\DISK&VEN_SANDISK&PROD_ULTRA\4C53…`,
+		`USB\VID_0781&PID_5581\4C53`:                           `USB\VID_0781&PID_5581\4C53`,
+		`an unknown device`:                                    `an unknown device`,
+		``:                                                     ``,
+	} {
+		if got := shortID(in); got != want {
+			t.Errorf("shortID(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
