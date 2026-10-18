@@ -85,6 +85,15 @@ device-side script) and everything added since.
   `rcplug-remote.sh`; the release has a Windows zip with everything in it.
 
 ### Fixed
+Found by GitHub's code scanning (CodeQL):
+- `rcplug-setup` quotes every word it sends to the device's shell. A key comment with
+  an apostrophe (`Sam's laptop`) broke "Send my key", and `$(...)` in one would have
+  run on the device.
+- `rcplug-setup` refuses a user or device address that starts with `-`, which ssh
+  would have taken as an option.
+- The flash tools no longer cut a USB ID that does not fit 16 bits down to one that
+  might look like the device's.
+
 Found by end-to-end tests of every tool and option (nothing was flashed):
 - `rcplug-setup.cmd` stopped at start with a syntax error (a ")" in a message ended
   a block), could not use a key file and talked about passwords the Duo does not

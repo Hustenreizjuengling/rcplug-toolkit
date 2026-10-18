@@ -139,9 +139,11 @@ func parseHIDID(line string) (bus, vendor, product uint16, ok bool) {
 	if len(parts) != 3 {
 		return 0, 0, 0, false
 	}
-	b, err1 := strconv.ParseUint(parts[0], 16, 64)
-	v, err2 := strconv.ParseUint(parts[1], 16, 64)
-	p, err3 := strconv.ParseUint(parts[2], 16, 64)
+	// The fields are 16-bit IDs written with up to 8 digits; a larger value
+	// must not be cut down to one that looks like the device.
+	b, err1 := strconv.ParseUint(parts[0], 16, 16)
+	v, err2 := strconv.ParseUint(parts[1], 16, 16)
+	p, err3 := strconv.ParseUint(parts[2], 16, 16)
 	if err1 != nil || err2 != nil || err3 != nil {
 		return 0, 0, 0, false
 	}

@@ -184,7 +184,8 @@ func newSession(user, host, key string) (*session, error) {
 	if _, err := exec.LookPath("ssh"); err != nil {
 		return nil, errors.New(tr("noSSH"))
 	}
-	if !regexp.MustCompile(`^[A-Za-z0-9._:-]+$`).MatchString(host) || !regexp.MustCompile(`^[A-Za-z0-9._-]+$`).MatchString(user) {
+	// Neither may start with "-": ssh would read it as an option.
+	if !regexp.MustCompile(`^[A-Za-z0-9:][A-Za-z0-9._:-]*$`).MatchString(host) || !regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9._-]*$`).MatchString(user) {
 		return nil, errors.New(tr("badHost"))
 	}
 	s := &session{target: user + "@" + host, out: os.Stdout, opts: []string{
@@ -226,11 +227,22 @@ func (s *session) sshTo(stdin io.Reader, stdout, stderr io.Writer, remote ...str
 // device runs a command of rcplug-remote.sh on the device; the script is
 // sent on stdin.
 func (s *session) device(stdout io.Writer, args ...string) error {
-	return s.ssh(bytes.NewReader(installer.RemoteScript), stdout, append([]string{"sh", "-s", "--"}, args...)...)
+	words := []string{"sh", "-s", "--"}
+	for _, a := range args {
+		words = append(words, shellQuote(a))
+	}
+	return s.ssh(bytes.NewReader(installer.RemoteScript), stdout, words...)
 }
 
 func (s *session) upload(r io.Reader, remotePath string) error {
-	return s.ssh(r, s.out, "cat > '"+remotePath+"'")
+	return s.ssh(r, s.out, "cat > "+shellQuote(remotePath))
+}
+
+// shellQuote makes s one word for the device's shell: ssh joins the words of
+// the remote command with spaces and hands the line to the shell there, so
+// a key comment like "Sam's laptop" or "$(...)" would otherwise be parsed.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 func (s *session) probe() error {

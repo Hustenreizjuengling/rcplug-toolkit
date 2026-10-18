@@ -20,8 +20,9 @@ func TestParseHIDID(t *testing.T) {
 		{" HID_ID=0003:000019F7:00000001 ", 0x0003, 0x19F7, 0x0001, true}, // surrounding space
 		{"HID_ID=0003:00000AAA:00000001", 0x0003, 0x0AAA, 0x0001, true},   // other vendor still parses
 		{"HID_NAME=RODE RODECaster", 0, 0, 0, false},
-		{"HID_ID=0003:000019F7", 0, 0, 0, false},        // too few fields
-		{"HID_ID=zz:000019F7:00000001", 0, 0, 0, false}, // bad hex
+		{"HID_ID=0003:000019F7", 0, 0, 0, false},          // too few fields
+		{"HID_ID=zz:000019F7:00000001", 0, 0, 0, false},   // bad hex
+		{"HID_ID=0003:000119F7:00000095", 0, 0, 0, false}, // not a 16-bit ID: never cut down to RØDE's
 		{"", 0, 0, 0, false},
 	}
 	for _, c := range cases {
