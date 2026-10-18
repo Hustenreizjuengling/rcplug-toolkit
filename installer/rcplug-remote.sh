@@ -78,7 +78,7 @@ case "$cmd" in
 
   install)
     tgz="${1:-}"
-    [ -n "$tgz" ] && [ -f "$tgz" ] || fail "install needs the payload tarball on the device"
+    if [ -z "$tgz" ] || [ ! -f "$tgz" ]; then fail "install needs the payload tarball on the device"; fi
     shift
     t="/tmp/rcplug-inst.$$"
     rm -rf "$t"; mkdir -p "$t" || fail "cannot create $t"
@@ -94,7 +94,7 @@ case "$cmd" in
   plugin)
     name="${1:-}"; tgz="${2:-}"
     case "$name" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) fail "invalid plugin name '$name'";; esac
-    [ -n "$tgz" ] && [ -f "$tgz" ] || fail "plugin needs the tarball on the device"
+    if [ -z "$tgz" ] || [ ! -f "$tgz" ]; then fail "plugin needs the tarball on the device"; fi
     need_install
     target="$dir/plugins/$name"
     stage="$dir/.staging-$name"

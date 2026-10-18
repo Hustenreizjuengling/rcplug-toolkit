@@ -18,7 +18,7 @@ RCPLUG_REPO="$(cd "${RCPLUG_REPO:-$REPO/../rcplug}" && pwd)"
 SB="$(mktemp -d "${TMPDIR:-/tmp}/rcplug-installer-test.XXXXXX")"
 PORT="${RCPLUG_TEST_PORT:-18580}"
 cleanup() {
-  [ -x "$SB/initd/rcplug" ] && RCPLUG_PIDFILE="$SB/rcplug.pid" "$SB/initd/rcplug" stop >/dev/null 2>&1 || true
+  if [ -x "$SB/initd/rcplug" ]; then RCPLUG_PIDFILE="$SB/rcplug.pid" "$SB/initd/rcplug" stop >/dev/null 2>&1 || true; fi
   rm -rf "$SB"
 }
 trap cleanup EXIT
@@ -50,7 +50,7 @@ echo "== install"
 wizard --payload "$PAYLOAD" --dir "$SB/rcplug" >/dev/null
 wait_up
 [ -x "$SB/rcplug/rcplugd" ] || fail "rcplugd not installed"
-[ -d "$SB/rcplug/data" ] && [ -d "$SB/rcplug/config" ] || fail "data/config directories missing"
+if [ ! -d "$SB/rcplug/data" ] || [ ! -d "$SB/rcplug/config" ]; then fail "data/config directories missing"; fi
 api /api/plugins | grep -q '"name":"console"' || fail "console plugin not listed"
 
 echo "== update keeps data"

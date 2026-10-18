@@ -39,7 +39,7 @@ PAYLOAD=""
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit "${1:-0}"; }
 die() { echo "error: $1" >&2; exit "${2:-1}"; }
-need_arg() { [ $# -ge 2 ] && [ -n "$2" ] || die "$1 needs a value" 2; }
+need_arg() { if [ $# -lt 2 ] || [ -z "$2" ]; then die "$1 needs a value" 2; fi; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
