@@ -139,6 +139,13 @@ if api /api/plugins >/dev/null 2>&1; then fail "rcplug still answers after stop"
 ssh sandbox sh -s -- start < "$REPO/installer/rcplug-remote.sh" | grep -q 'rcplug started' || fail "start did not report"
 wait_up
 
+echo "== dashboard password removed without a shell"
+mkdir -p "$SB/rcplug/config"
+echo '{"hash":"x","key":"y"}' > "$SB/rcplug/config/dashboard-access.json"
+ssh sandbox sh -s -- resetaccess < "$REPO/installer/rcplug-remote.sh" | grep -q 'password removed' || fail "resetaccess did not report"
+[ ! -e "$SB/rcplug/config/dashboard-access.json" ] || fail "the password file is still there"
+ssh sandbox sh -s -- resetaccess < "$REPO/installer/rcplug-remote.sh" | grep -q 'has no password' || fail "a second resetaccess"
+
 echo "== device identity (what the setup shows before an update)"
 mkdir -p "$SB/sysroot/etc" "$SB/sysroot/usr/bin"
 echo rodecaster-pro-ii-mini > "$SB/sysroot/etc/hostname"

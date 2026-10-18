@@ -270,7 +270,9 @@ echo "-- checking the dashboard on http://$HOST:$port/"
 ok=0
 if command -v curl >/dev/null 2>&1; then
   for _ in 1 2 3 4 5 6 7 8 9 10; do
-    if curl -fsS --max-time 3 "http://$HOST:$port/api/system" >/dev/null 2>&1; then ok=1; break; fi
+    # 200, or 401 when a dashboard password is set: either way it answers.
+    code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "http://$HOST:$port/api/system" 2>/dev/null || true)"
+    if [ "$code" = 200 ] || [ "$code" = 401 ]; then ok=1; break; fi
     sleep 1
   done
 fi

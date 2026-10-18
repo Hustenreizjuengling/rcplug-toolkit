@@ -14,7 +14,7 @@ computer; none of them changes anything on the device before you confirm.
 ## rcplug-setup
 
 ```
-rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | stop | start | uninstall | keys | status]
+rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | stop | start | resetaccess | uninstall | keys | status]
 ```
 
 Without a command it opens the setup window in your browser, with the fields filled in
@@ -24,7 +24,10 @@ something fails (connection, key, command) and 2 without an address. `keys` adds
 computer's SSH key (created if needed) to the device once; running it again changes
 nothing. `stop` is the emergency brake: it stops rcplug and all plugins on the device
 (until `start` or the next boot), also when the dashboard does not answer; the setup
-window has the same as *Stop rcplug* / *Start rcplug*.
+window has the same as *Stop rcplug* / *Start rcplug*. `resetaccess` removes the
+dashboard's password (rcplug 0.6.9 and later), for when it is forgotten and the console
+cannot confirm the buttons at the device; in the setup window *Remove the dashboard
+password*.
 
 | Option | Meaning |
 |---|---|

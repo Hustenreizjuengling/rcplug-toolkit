@@ -142,6 +142,7 @@ func (g *gui) routes() http.Handler {
 	mux.HandleFunc("POST /api/diagnostics", g.guard(g.handleDiagnostics))
 	mux.HandleFunc("POST /api/uninstall", g.guard(g.sessionOp(func(s *session, r req) error { return s.device(s.out, "uninstall") })))
 	mux.HandleFunc("POST /api/stop", g.guard(g.sessionOp(func(s *session, r req) error { return s.device(s.out, "stop") })))
+	mux.HandleFunc("POST /api/resetaccess", g.guard(g.sessionOp(func(s *session, r req) error { return s.device(s.out, "resetaccess") })))
 	mux.HandleFunc("POST /api/start", g.guard(g.sessionOp(func(s *session, r req) error { return s.device(s.out, "start") })))
 	mux.HandleFunc("POST /api/pushkey", g.guard(g.handlePushKey))
 	mux.HandleFunc("POST /api/quit", g.guard(g.handleQuit))

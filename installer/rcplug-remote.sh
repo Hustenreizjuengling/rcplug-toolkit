@@ -19,6 +19,8 @@
 #                           directory (data is kept), rescan and restart it
 #   diagnostics             write the diagnostics zip to stdout; if rcplugd
 #                           cannot build it, a tar.gz of the raw logs instead
+#   resetaccess             remove the dashboard password (rcplug 0.6.9 and
+#                           later); the dashboard is open again at once
 #   uninstall               stop rcplug and remove it with all plugin data
 #   addkey <public key>     add an SSH public key to the user's authorized_keys
 #                           unless it is there already
@@ -156,6 +158,17 @@ case "$cmd" in
     fi
     ;;
 
+  resetaccess)
+    need_install
+    f="$dir/config/dashboard-access.json"
+    if [ -e "$f" ]; then
+      rm -f "$f" || fail "removing the dashboard password failed"
+      echo "dashboard password removed; the dashboard is open again"
+    else
+      echo "the dashboard has no password"
+    fi
+    ;;
+
   uninstall)
     locate
     if [ -x "$INITDIR/rcplug" ]; then "$INITDIR/rcplug" stop >/dev/null 2>&1 || true; fi
@@ -190,7 +203,7 @@ case "$cmd" in
     ;;
 
   *)
-    echo "usage: sh -s -- {device|find|check|install <tgz> [args]|plugin <name> <tgz>|diagnostics|uninstall|addkey <key>}" >&2
+    echo "usage: sh -s -- {device|find|check|install <tgz> [args]|plugin <name> <tgz>|diagnostics|stop|start|resetaccess|uninstall|addkey <key>}" >&2
     exit 2
     ;;
 esac

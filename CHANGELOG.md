@@ -6,6 +6,14 @@ may break compatibility).
 
 ## 0.5.3 - Unreleased
 
+### Added
+- *Remove the dashboard password* in the setup window (*Diagnostics and more*) and
+  `rcplug-setup resetaccess`: removes the password that rcplug 0.6.9 can put on its
+  dashboard, without a shell.
+
+### Fixed
+- The wizard counts a dashboard behind a password (401) as up.
+
 ## 0.5.2 - 2026-10-18
 
 ### Added

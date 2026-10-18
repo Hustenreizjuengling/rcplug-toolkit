@@ -169,6 +169,7 @@
       <button class="small" id="btnPushKey" data-t="pushKey"></button>
       <button class="small" id="btnStop" data-t="stopRcplug"></button>
       <button class="small" id="btnStart" data-t="startRcplug"></button>
+      <button class="small" id="btnResetAccess" data-t="resetAccess"></button>
       <span class="spacer"></span>
       <button class="small danger" id="btnUninstall" data-t="uninstall"></button>
     </div>
@@ -214,7 +215,7 @@ const T = {
     fwSaved: 'Saved and verified:', fwReused: 'Already downloaded and intact:', fwCancelled: 'Download cancelled.',
     cfwKeyTitle: 'b) Add your SSH key', cfwRootfs: 'Stock firmware (os.tar.gz)', cfwKey: 'Your SSH public key (.pub)', genKey: 'Generate key', cfwOut: 'Output folder', cfwBuild: 'Build image',
     installTitle: 'Install or update rcplug', installDesc: 'Once SSH works, push rcplug to the device.', payload: 'Release package (rcplug-…-aarch64.tar.gz)', install: 'Install / update', addPlugin: 'Add plugin',
-    moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, stop rcplug in an emergency (until it is started again or the device restarts), or remove it.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug', stopRcplug: 'Stop rcplug', startRcplug: 'Start rcplug',
+    moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, stop rcplug in an emergency (until it is started again or the device restarts), or remove it.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug', stopRcplug: 'Stop rcplug', startRcplug: 'Start rcplug', resetAccess: 'Remove the dashboard password', confirmResetAccess: 'Remove the password of the device\'s dashboard? Everyone on the network can then use it again until a new one is set.',
     connecting: 'connecting…', connected: 'connected', notConnected: 'not connected', failed: 'failed',
     working: 'working…', done: 'done', cancel: 'Cancel', chooseFolder: 'Choose this folder', pickFile: 'Pick a file', pickDir: 'Choose a folder',
     quit: 'Quit', langName: 'Deutsch', confirmUninstall: 'Remove rcplug and all plugin data from the device?',
@@ -247,7 +248,7 @@ const T = {
     fwSaved: 'Gespeichert und geprüft:', fwReused: 'Schon heruntergeladen und intakt:', fwCancelled: 'Download abgebrochen.',
     cfwKeyTitle: 'b) SSH-Schlüssel einfügen', cfwRootfs: 'Original-Firmware (os.tar.gz)', cfwKey: 'Dein öffentlicher SSH-Schlüssel (.pub)', genKey: 'Schlüssel erzeugen', cfwOut: 'Ausgabeordner', cfwBuild: 'Abbild erstellen',
     installTitle: 'rcplug installieren oder aktualisieren', installDesc: 'Sobald SSH geht, rcplug aufs Gerät bringen.', payload: 'Release-Paket (rcplug-…-aarch64.tar.gz)', install: 'Installieren / aktualisieren', addPlugin: 'Plugin hinzufügen',
-    moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen, rcplug im Notfall anhalten (bis es wieder gestartet wird oder das Gerät neu startet) oder entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren', stopRcplug: 'rcplug anhalten', startRcplug: 'rcplug starten',
+    moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen, rcplug im Notfall anhalten (bis es wieder gestartet wird oder das Gerät neu startet) oder entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren', stopRcplug: 'rcplug anhalten', startRcplug: 'rcplug starten', resetAccess: 'Dashboard-Passwort entfernen', confirmResetAccess: 'Das Passwort des Dashboards auf dem Gerät entfernen? Dann kann es wieder jeder im Netzwerk benutzen, bis ein neues gesetzt ist.',
     connecting: 'verbinde…', connected: 'verbunden', notConnected: 'nicht verbunden', failed: 'fehlgeschlagen',
     working: 'arbeite…', done: 'fertig', cancel: 'Abbrechen', chooseFolder: 'Diesen Ordner wählen', pickFile: 'Datei wählen', pickDir: 'Ordner wählen',
     quit: 'Beenden', langName: 'English', confirmUninstall: 'rcplug und alle Plugin-Daten vom Gerät entfernen?',
@@ -371,6 +372,11 @@ $('#btnStop').addEventListener('click', () => requireConn('#moreLog') &&
   withButton($('#btnStop'), '#moreLog', () => api('stop', {})));
 $('#btnStart').addEventListener('click', () => requireConn('#moreLog') &&
   withButton($('#btnStart'), '#moreLog', () => api('start', {})));
+$('#btnResetAccess').addEventListener('click', () => {
+  if (!requireConn('#moreLog')) return;
+  if (!confirm(t('confirmResetAccess'))) return;
+  withButton($('#btnResetAccess'), '#moreLog', () => api('resetaccess', {}));
+});
 $('#btnUninstall').addEventListener('click', () => {
   if (!requireConn('#moreLog')) return;
   if (!confirm(t('confirmUninstall'))) return;
