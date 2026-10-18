@@ -132,6 +132,13 @@ if [ -n "$SETUP" ]; then
   ls "$SB"/rcplug-diagnostics-sandbox-*.zip >/dev/null 2>&1 || fail "rcplug-setup saved no diagnostics"
 fi
 
+echo "== stop and start without a shell"
+# As the setup runs it: the script on stdin over ssh.
+ssh sandbox sh -s -- stop < "$REPO/installer/rcplug-remote.sh" | grep -q 'rcplug stopped' || fail "stop did not report"
+if api /api/plugins >/dev/null 2>&1; then fail "rcplug still answers after stop"; fi
+ssh sandbox sh -s -- start < "$REPO/installer/rcplug-remote.sh" | grep -q 'rcplug started' || fail "start did not report"
+wait_up
+
 echo "== device identity (what the setup shows before an update)"
 mkdir -p "$SB/sysroot/etc" "$SB/sysroot/usr/bin"
 echo rodecaster-pro-ii-mini > "$SB/sysroot/etc/hostname"

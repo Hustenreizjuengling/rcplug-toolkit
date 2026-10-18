@@ -6,6 +6,11 @@ may break compatibility).
 
 ## 0.5.2 - Unreleased
 
+### Added
+- *Stop rcplug* and *Start rcplug* in the setup window (*Diagnostics and more*) and
+  `rcplug-setup stop|start`: the emergency brake without a shell on the device, also
+  when the dashboard does not answer.
+
 ## 0.5.1 - 2026-10-18
 
 ### Changed

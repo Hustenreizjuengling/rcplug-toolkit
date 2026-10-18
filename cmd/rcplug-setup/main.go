@@ -52,7 +52,7 @@ func run() int {
 	noGUI := flag.Bool("no-gui", false, "use the text menu instead of the browser GUI")
 	showVer := flag.Bool("version", false, "print version and exit")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | uninstall | keys | status]\n\n")
+		fmt.Fprintf(os.Stderr, "usage: rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | stop | start | uninstall | keys | status]\n\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -161,6 +161,8 @@ func (s *session) dispatch(ui *ui, payload string, args []string) error {
 			return nil
 		}
 		return s.device(s.out, "uninstall")
+	case "stop", "start":
+		return s.device(s.out, args[0])
 	case "keys":
 		return s.keys()
 	case "status":

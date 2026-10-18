@@ -167,6 +167,8 @@
     <div class="filerow"><input type="text" id="diagDir" placeholder="…"><button class="small" data-browse="diagDir" data-mode="dir" data-t="browse"></button><button class="small primary" id="btnDiag" data-t="diag"></button></div>
     <div class="row">
       <button class="small" id="btnPushKey" data-t="pushKey"></button>
+      <button class="small" id="btnStop" data-t="stopRcplug"></button>
+      <button class="small" id="btnStart" data-t="startRcplug"></button>
       <span class="spacer"></span>
       <button class="small danger" id="btnUninstall" data-t="uninstall"></button>
     </div>
@@ -212,7 +214,7 @@ const T = {
     fwSaved: 'Saved and verified:', fwReused: 'Already downloaded and intact:', fwCancelled: 'Download cancelled.',
     cfwKeyTitle: 'b) Add your SSH key', cfwRootfs: 'Stock firmware (os.tar.gz)', cfwKey: 'Your SSH public key (.pub)', genKey: 'Generate key', cfwOut: 'Output folder', cfwBuild: 'Build image',
     installTitle: 'Install or update rcplug', installDesc: 'Once SSH works, push rcplug to the device.', payload: 'Release package (rcplug-…-aarch64.tar.gz)', install: 'Install / update', addPlugin: 'Add plugin',
-    moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, or remove rcplug.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug',
+    moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, stop rcplug in an emergency (until it is started again or the device restarts), or remove it.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug', stopRcplug: 'Stop rcplug', startRcplug: 'Start rcplug',
     connecting: 'connecting…', connected: 'connected', notConnected: 'not connected', failed: 'failed',
     working: 'working…', done: 'done', cancel: 'Cancel', chooseFolder: 'Choose this folder', pickFile: 'Pick a file', pickDir: 'Choose a folder',
     quit: 'Quit', langName: 'Deutsch', confirmUninstall: 'Remove rcplug and all plugin data from the device?',
@@ -245,7 +247,7 @@ const T = {
     fwSaved: 'Gespeichert und geprüft:', fwReused: 'Schon heruntergeladen und intakt:', fwCancelled: 'Download abgebrochen.',
     cfwKeyTitle: 'b) SSH-Schlüssel einfügen', cfwRootfs: 'Original-Firmware (os.tar.gz)', cfwKey: 'Dein öffentlicher SSH-Schlüssel (.pub)', genKey: 'Schlüssel erzeugen', cfwOut: 'Ausgabeordner', cfwBuild: 'Abbild erstellen',
     installTitle: 'rcplug installieren oder aktualisieren', installDesc: 'Sobald SSH geht, rcplug aufs Gerät bringen.', payload: 'Release-Paket (rcplug-…-aarch64.tar.gz)', install: 'Installieren / aktualisieren', addPlugin: 'Plugin hinzufügen',
-    moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen oder rcplug entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren',
+    moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen, rcplug im Notfall anhalten (bis es wieder gestartet wird oder das Gerät neu startet) oder entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren', stopRcplug: 'rcplug anhalten', startRcplug: 'rcplug starten',
     connecting: 'verbinde…', connected: 'verbunden', notConnected: 'nicht verbunden', failed: 'fehlgeschlagen',
     working: 'arbeite…', done: 'fertig', cancel: 'Abbrechen', chooseFolder: 'Diesen Ordner wählen', pickFile: 'Datei wählen', pickDir: 'Ordner wählen',
     quit: 'Beenden', langName: 'English', confirmUninstall: 'rcplug und alle Plugin-Daten vom Gerät entfernen?',
@@ -365,6 +367,10 @@ $('#btnDiag').addEventListener('click', () => requireConn('#moreLog') &&
   withButton($('#btnDiag'), '#moreLog', () => api('diagnostics', { dir: $('#diagDir').value.trim() })));
 $('#btnPushKey').addEventListener('click', () => requireConn('#moreLog') &&
   withButton($('#btnPushKey'), '#moreLog', () => api('pushkey', {})));
+$('#btnStop').addEventListener('click', () => requireConn('#moreLog') &&
+  withButton($('#btnStop'), '#moreLog', () => api('stop', {})));
+$('#btnStart').addEventListener('click', () => requireConn('#moreLog') &&
+  withButton($('#btnStart'), '#moreLog', () => api('start', {})));
 $('#btnUninstall').addEventListener('click', () => {
   if (!requireConn('#moreLog')) return;
   if (!confirm(t('confirmUninstall'))) return;

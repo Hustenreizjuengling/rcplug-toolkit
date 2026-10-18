@@ -143,6 +143,19 @@ case "$cmd" in
     exit $rc
     ;;
 
+  stop|start)
+    # The emergency brake without a shell: stop rcplug and all plugins (until
+    # it is started again or the device restarts), or start it again.
+    need_install
+    [ -x "$INITDIR/rcplug" ] || fail "rcplug has no init script here"
+    "$INITDIR/rcplug" "$cmd" || exit $?
+    if [ "$cmd" = stop ]; then
+      echo "rcplug stopped (until it is started again or the device restarts)"
+    else
+      echo "rcplug started"
+    fi
+    ;;
+
   uninstall)
     locate
     if [ -x "$INITDIR/rcplug" ]; then "$INITDIR/rcplug" stop >/dev/null 2>&1 || true; fi

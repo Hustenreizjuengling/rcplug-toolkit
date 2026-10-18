@@ -14,7 +14,7 @@ computer; none of them changes anything on the device before you confirm.
 ## rcplug-setup
 
 ```
-rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | uninstall | keys | status]
+rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | stop | start | uninstall | keys | status]
 ```
 
 Without a command it opens the setup window in your browser, with the fields filled in
@@ -22,7 +22,9 @@ from `--host`, `--user`, `--key` and `--payload`; `menu` (or `--no-gui`) uses th
 menu instead. Paths may start with `~`. On the command line it exits with status 1 when
 something fails (connection, key, command) and 2 without an address. `keys` adds this
 computer's SSH key (created if needed) to the device once; running it again changes
-nothing.
+nothing. `stop` is the emergency brake: it stops rcplug and all plugins on the device
+(until `start` or the next boot), also when the dashboard does not answer; the setup
+window has the same as *Stop rcplug* / *Start rcplug*.
 
 | Option | Meaning |
 |---|---|
