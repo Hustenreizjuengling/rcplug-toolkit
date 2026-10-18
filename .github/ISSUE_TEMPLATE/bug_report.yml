@@ -1,0 +1,44 @@
+name: Bug report
+description: A tool does not work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Never paste private keys, passwords or the device's serial number.
+  - type: input
+    id: version
+    attributes:
+      label: Toolkit version
+      description: "`rcplug-setup --version`, `rcplug-cfw --version` or `rcplug-flash --version`"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Your computer
+      placeholder: Windows 11, macOS 15, Ubuntu 24.04, …
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and firmware
+      placeholder: RØDECaster Duo, firmware 1.7.6
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Which part
+      options: [Setup window, Firmware download or patching (rcplug-cfw), Flashing (rcplug-flash), Wizard script, Other]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Output
+      description: The tool's output or the log shown in the setup window (remove anything private).
+      render: text

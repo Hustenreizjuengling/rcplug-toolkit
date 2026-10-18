@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Tag must match VERSION
+        run: test "v$(cat VERSION)" = "${GITHUB_REF_NAME}"
+      - name: The latest rcplug device package, for the Windows zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p payload
+          gh release download --repo "${{ github.repository_owner }}/rcplug" --pattern 'rcplug-*-aarch64.tar.gz' --dir payload || true
+          ls payload
+      - run: make test package PAYLOAD="$(ls payload/rcplug-*-aarch64.tar.gz 2>/dev/null | head -1)"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="$(awk -v v="$(cat VERSION)" '$0 ~ "^## \\[?"v"\\]?" {p=1; next} /^## / && p {exit} p' CHANGELOG.md)"
+          gh release create "$GITHUB_REF_NAME" --title "rcplug-toolkit $GITHUB_REF_NAME" --notes "$notes" \
+            dist/rcplug-toolkit-*-windows.zip dist/rcplug-setup-* dist/rcplug-cfw-* dist/rcplug-flash-* \
+            dist/rcplug-wizard.sh dist/rcplug-remote.sh dist/SHA256SUMS

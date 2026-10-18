@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go tests and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: gofmt, vet (also as Windows code), race tests, shellcheck
+        run: make check
+
+  windows:
+    name: Flash and setup tests on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./internal/flash ./cmd/rcplug-flash ./cmd/rcplug-setup
+
+  installer:
+    name: Installer end-to-end test (sandbox) with rcplug
+    # It checks out the rcplug repository, which GitHub only allows while it is public.
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rcplug-toolkit
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/rcplug
+          path: rcplug
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: rcplug-toolkit/go.mod
+      - run: make -C rcplug-toolkit installer-test RCPLUG=../rcplug
+
+  package:
+    name: Release files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rcplug-toolkit
+          path: |
+            dist/rcplug-toolkit-*-windows.zip
+            dist/rcplug-setup-*
+            dist/rcplug-cfw-*
+            dist/rcplug-flash-*
+            dist/rcplug-wizard.sh
+            dist/rcplug-remote.sh
+            dist/SHA256SUMS

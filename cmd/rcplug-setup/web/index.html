@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rcplug setup</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ctext y=%2213%22 font-size=%2214%22%3E%E2%9A%99%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d1015; --panel:#151a21; --panel2:#1c232c; --panel3:#232c37; --line:#2a333f;
+    --fg:#e7edf3; --muted:#9aa8b6; --dim:#7d8a97; --accent:#19c37d; --accent-ink:#04261a;
+    --amber:#e3a008; --red:#f85149; --blue:#2f81f7; --radius:12px;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .top{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  .top .logo{font-size:22px;color:var(--accent)} .top h1{font-size:16px;margin:0;font-weight:650}
+  .spacer{flex:1}
+  .pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:4px 12px}
+  .pill .dot{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+  .pill.ok{color:var(--fg)} .pill.ok .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .pill.bad{color:#ffb3ae;border-color:var(--red)} .pill.bad .dot{background:var(--red)}
+  main{max-width:860px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .card.off{opacity:.55;pointer-events:none}
+  .card h2{margin:0 0 2px;font-size:16px} .card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--panel3);color:var(--muted);font-size:12px;margin-right:8px}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input[type=text],select{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  .sub{font-size:13px;font-weight:650;margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--fg)}
+  .sub:first-of-type{border-top:0;padding-top:0;margin-top:4px}
+  .hint{font-size:12px;color:var(--dim);margin:6px 0 0} .hint.ok{color:var(--accent)} .hint.err{color:#ffb3ae}
+  select option:disabled{color:var(--dim)}
+  .bar{margin-top:12px;height:8px;border-radius:4px;background:var(--panel3);overflow:hidden}
+  .bar>div{height:100%;width:0;background:var(--accent);transition:width .3s}
+  .barText{font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+  .filerow{display:flex;gap:8px} .filerow input{flex:1;min-width:0;font-family:var(--mono);font-size:12px}
+  .filerow select{flex:1;min-width:0;width:auto} .filerow #fwOther{flex:0 0 140px}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--fg);border-radius:8px;padding:8px 14px}
+  button:hover{border-color:var(--blue)} button:disabled{opacity:.5;cursor:default}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+  button.danger{color:var(--red);border-color:var(--red);background:transparent}
+  button.small{padding:5px 10px;font-size:13px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .sw{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--fg);cursor:pointer;margin-top:12px}
+  .log{margin-top:12px;background:#0a0d12;border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:#c9d4df}
+  .banner{border:1px solid var(--amber);background:#2a2110;color:#ffe2a3;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px}
+  .banner a{color:#ffe2a3} .ok{color:var(--accent)} .err{color:#ffb3ae} .muted{color:var(--muted)} .mono{font-family:var(--mono)}
+  a{color:var(--blue)}
+  /* file picker */
+  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:0;width:min(640px,94vw);max-height:80vh}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  .dlg-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .dlg-h .cur{flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .roots{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line)}
+  .roots button{padding:3px 10px;font-size:12px}
+  .listing{overflow:auto;max-height:46vh;padding:6px 8px}
+  .entry{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer}
+  .entry:hover{background:var(--panel3)} .entry .ic{width:18px;text-align:center} .entry .sz{margin-left:auto;color:var(--dim);font-size:11px}
+  .entry.dir{color:var(--fg)} .entry.file{color:var(--muted)}
+  .dlg-f{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
+  .dlg-b{padding:16px 18px} .dlg-b h3{margin:0 0 8px;font-size:16px} .dlg-b p{margin:0 0 10px;font-size:13px}
+  .dlg-b .mono{font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel2);border-radius:8px;padding:8px 10px}
+  button.danger:not(:disabled):hover{background:var(--red);color:#fff}
+  /* flash pre-flight checks */
+  .checks{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+  .checks li{display:grid;grid-template-columns:18px 130px minmax(0,1fr);gap:8px;font-size:13px;align-items:baseline}
+  .checks li.ok>span:first-child{color:var(--accent)} .checks li.warn>span:first-child{color:var(--amber)} .checks li.err>span:first-child{color:var(--red)}
+  .checks .d{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+  .checks li.err .d{color:#ffb3ae}
+  @media (max-width:520px){
+    .top{flex-wrap:wrap;gap:8px;padding:10px 16px} .top h1{font-size:15px}
+    main{padding:12px 10px}
+    .filerow{flex-wrap:wrap} .filerow input{flex:1 1 100%} .filerow #fwOther{flex:1 1 100%}
+    .checks li{grid-template-columns:18px minmax(0,1fr)} .checks .d{grid-column:2}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="logo" aria-hidden="true">⚙</span>
+  <h1>rcplug setup</h1>
+  <span class="spacer"></span>
+  <span class="pill" id="status"><span class="dot"></span><span id="statusText"></span></span>
+  <button class="small" id="lang"></button>
+  <button class="small" id="quit"></button>
+</header>
+<main>
+  <section class="card" id="cardConnect">
+    <h2><span class="step">1</span><span data-t="connTitle"></span></h2>
+    <p class="desc" data-t="connDesc"></p>
+    <label for="host" data-t="host"></label>
+    <input type="text" id="host" placeholder="192.168.1.50" autocomplete="off">
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:140px"><label for="user" data-t="user"></label><input type="text" id="user" value="root"></div>
+    </div>
+    <label data-t="keyFile"></label>
+    <div class="filerow"><input type="text" id="connKey" placeholder="~/.ssh/rodecaster"><button class="small" data-browse="connKey" data-mode="file" data-t="browse"></button></div>
+    <div class="row"><button class="primary" id="btnConnect" data-t="connect"></button></div>
+    <div class="log" id="connLog" hidden></div>
+  </section>
+
+  <section class="card" id="cardCfw">
+    <h2><span class="step">2</span><span data-t="cfwTitle"></span></h2>
+    <p class="desc" data-t="cfwDesc"></p>
+    <div class="banner" id="cfwBanner" data-t="cfwBanner"></div>
+    <label for="fwDevice" data-t="fwDevice"></label>
+    <select id="fwDevice"></select>
+    <p class="hint" id="devHint"></p>
+    <h3 class="sub" data-t="fwTitle"></h3>
+    <label for="fwPick" data-t="fwVersion"></label>
+    <div class="filerow"><select id="fwPick"></select><input type="text" id="fwOther" placeholder="1.7.3" hidden></div>
+    <p class="hint" id="fwInfo"></p>
+    <label data-t="fwDir"></label>
+    <div class="filerow"><input type="text" id="fwDir" placeholder="…"><button class="small" data-browse="fwDir" data-mode="dir" data-t="browse"></button></div>
+    <div class="row"><button class="primary" id="btnFw" data-t="fwDownload"></button><button class="small" id="btnFwCancel" data-t="cancel" hidden></button></div>
+    <div class="bar" id="fwBar" hidden><div></div></div>
+    <div class="barText" id="fwBarText" hidden></div>
+    <div class="log" id="fwLog" hidden></div>
+    <h3 class="sub" data-t="cfwKeyTitle"></h3>
+    <label data-t="cfwRootfs"></label>
+    <div class="filerow"><input type="text" id="cfwIn" placeholder="rodecaster-duo-…-os.tar.gz"><button class="small" data-browse="cfwIn" data-mode="file" data-t="browse"></button></div>
+    <p class="hint" id="cfwInInfo"></p>
+    <label data-t="cfwKey"></label>
+    <div class="filerow"><input type="text" id="cfwKey" placeholder="~/.ssh/rodecaster.pub"><button class="small" data-browse="cfwKey" data-mode="file" data-t="browse"></button><button class="small" id="btnGenKey" data-t="genKey"></button></div>
+    <label data-t="cfwOut"></label>
+    <div class="filerow"><input type="text" id="cfwOut" placeholder="out/"><button class="small" data-browse="cfwOut" data-mode="dir" data-t="browse"></button></div>
+    <div class="row"><button class="primary" id="btnCfw" data-t="cfwBuild"></button></div>
+    <p class="hint err" id="cfwNoKeys" hidden></p>
+    <div class="log" id="cfwLog" hidden></div>
+  </section>
+
+  <section class="card" id="cardFlash">
+    <h2><span class="step">3</span><span data-t="flashTitle"></span></h2>
+    <p class="desc" data-t="flashDesc"></p>
+    <div class="banner" data-t="flashBanner"></div>
+    <p class="hint err" id="flashOS" hidden></p>
+    <label data-t="flashDir"></label>
+    <div class="filerow"><input type="text" id="flashDir" placeholder="out/"><button class="small" data-browse="flashDir" data-mode="dir" data-t="browse"></button><button class="small" id="btnFlashCheck" data-t="flashCheck"></button></div>
+    <ul class="checks" id="flashChecks" hidden></ul>
+    <p class="hint" id="flashState"></p>
+    <div class="log" id="flashUdev" hidden></div>
+    <div class="row"><button id="btnStage" data-t="flashStage" disabled></button><button class="danger" id="btnFlash" data-t="flashGo" disabled></button></div>
+    <div class="log" id="flashLog" hidden></div>
+  </section>
+
+  <section class="card off" id="cardInstall">
+    <h2><span class="step">4</span><span data-t="installTitle"></span></h2>
+    <p class="desc" data-t="installDesc"></p>
+    <label data-t="payload"></label>
+    <div class="filerow"><input type="text" id="payload" placeholder="rcplug-…-aarch64.tar.gz"><button class="small" data-browse="payload" data-mode="file" data-t="browse"></button></div>
+    <div class="row">
+      <button class="primary" id="btnInstall" data-t="install"></button>
+      <span class="spacer"></span>
+      <input type="text" id="pluginDir" placeholder="…/my-plugin" style="flex:1;min-width:140px">
+      <button class="small" data-browse="pluginDir" data-mode="dir" data-t="browse"></button>
+      <button class="small" id="btnPlugin" data-t="addPlugin"></button>
+    </div>
+    <div class="log" id="installLog" hidden></div>
+  </section>
+
+  <section class="card off" id="cardMore">
+    <h2><span class="step">5</span><span data-t="moreTitle"></span></h2>
+    <p class="desc" data-t="moreDesc"></p>
+    <div class="filerow"><input type="text" id="diagDir" placeholder="…"><button class="small" data-browse="diagDir" data-mode="dir" data-t="browse"></button><button class="small primary" id="btnDiag" data-t="diag"></button></div>
+    <div class="row">
+      <button class="small" id="btnPushKey" data-t="pushKey"></button>
+      <span class="spacer"></span>
+      <button class="small danger" id="btnUninstall" data-t="uninstall"></button>
+    </div>
+    <div class="log" id="moreLog" hidden></div>
+  </section>
+</main>
+
+<dialog id="picker">
+  <div class="dlg-h"><button class="small" id="pkUp">↑</button><span class="cur" id="pkCur"></span></div>
+  <div class="roots" id="pkRoots"></div>
+  <div class="listing" id="pkList"></div>
+  <div class="dlg-f"><span class="muted" id="pkHint" style="margin-right:auto;font-size:12px"></span><button id="pkCancel" data-t="cancel"></button><button class="primary" id="pkChoose" data-t="chooseFolder"></button></div>
+</dialog>
+
+<dialog id="flashDlg">
+  <div class="dlg-b">
+    <h3 data-t="flashConfirmTitle"></h3>
+    <p data-t="flashConfirmText"></p>
+    <p class="mono" id="flashSummary"></p>
+    <label for="flashWord" data-t="flashTypeWord"></label>
+    <input type="text" id="flashWord" autocomplete="off" spellcheck="false" placeholder="flash">
+  </div>
+  <div class="dlg-f"><button id="flashNo" data-t="cancel"></button><button class="danger" id="flashYes" data-t="flashNow" disabled></button></div>
+</dialog>
+
+<script>
+'use strict';
+const P = new URLSearchParams(location.search);
+const TOKEN = P.get('t') || '';
+let lang = P.get('lang') || 'en';
+try { lang = localStorage.getItem('rcplug-lang') || lang; } catch (e) {}
+const T = {
+  en: {
+    connTitle: 'Connect to the device', connDesc: 'Enter the RØDECaster’s address. Use your SSH key (the device accepts no password).',
+    host: 'IP address or name', user: 'SSH user', keyFile: 'SSH key (optional, else your default key is used)', browse: 'Browse…', connect: 'Connect',
+    cfwTitle: 'Prepare firmware (add your SSH key)', cfwDesc: 'The Duo has no SSH out of the box. Download the stock firmware and add your key; step 3 flashes the result onto the device.',
+    cfwBanner: 'The stock firmware comes straight from RØDE’s update server — the same files the RØDE app installs — and is checked against RØDE’s MD5. rcplug adds your key; step 3 flashes the result over USB, see <a href="#" id="guideLink">docs/enable-ssh.md</a>. Modifying firmware is at your own risk.',
+    fwDevice: 'Device', devDownloadOnly: 'download only, untested', devUnsupported: 'not supported', devNoKeys: 'rcplug can download and check firmware for this device, but adding a key is only supported for the RØDECaster Duo so far.',
+    devFromDevice: 'Detected on the connected device.', devOtherConnected: '⚠ The connected device is a {dev}.', unknownModel: 'unknown model', firmwareWord: 'firmware', onDevice: 'on your device', imgOther: 'This image is for the {img}, not the {dev}.', imgUnknown: 'This image does not identify as a known RØDECaster model.', fwChecked: 'Checked:', imgChecking: 'checking the image…', md5ok: 'matches its .md5',
+    fwTitle: 'a) Download the stock firmware', fwVersion: 'Version', fwDir: 'Save to folder', fwDownload: 'Download',
+    stable: 'stable', beta: 'beta', fwOther: 'Other version…', fwChecking: 'Asking RØDE’s server for the current versions…',
+    fwLatest: 'Current release from RØDE:', fwOffline: 'Could not read RØDE’s firmware list:', fwHint: 'Tip: the fewest changes happen with the same version your device already runs (shown in its settings); older versions are still on RØDE’s server.',
+    fwSaved: 'Saved and verified:', fwReused: 'Already downloaded and intact:', fwCancelled: 'Download cancelled.',
+    cfwKeyTitle: 'b) Add your SSH key', cfwRootfs: 'Stock firmware (os.tar.gz)', cfwKey: 'Your SSH public key (.pub)', genKey: 'Generate key', cfwOut: 'Output folder', cfwBuild: 'Build image',
+    installTitle: 'Install or update rcplug', installDesc: 'Once SSH works, push rcplug to the device.', payload: 'Release package (rcplug-…-aarch64.tar.gz)', install: 'Install / update', addPlugin: 'Add plugin',
+    moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, or remove rcplug.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug',
+    connecting: 'connecting…', connected: 'connected', notConnected: 'not connected', failed: 'failed',
+    working: 'working…', done: 'done', cancel: 'Cancel', chooseFolder: 'Choose this folder', pickFile: 'Pick a file', pickDir: 'Choose a folder',
+    quit: 'Quit', langName: 'Deutsch', confirmUninstall: 'Remove rcplug and all plugin data from the device?',
+    genDone: 'Key created. Public key:', built: 'Image ready:', flashNext: 'Next: flash it in step 3.', needConnectFirst: 'Connect to the device first (step 1).',
+    flashTitle: 'Flash over USB', flashDesc: 'Puts the image from step 2 onto the device: switches it into update mode, copies archive.tar.gz onto its update disk and, only if you confirm, flashes it and reboots. Needs the Duo on USB and Windows or Linux. Follows the procedure of the rodecaster-duo-ssh tool: on Linux its bundled scripts (Python 3), on Windows the same steps built in — close the RØDECaster App first.',
+    flashBanner: 'Flashing overwrites the device’s inactive firmware partition and reboots it. The Duo keeps two partitions (A/B), so a bad image still leaves the other one bootable — but do not switch it off or unplug it while it flashes. The rcplug authors have not tested this step on real hardware yet. This is your decision for your own device.',
+    flashDir: 'Folder with archive.tar.gz and archive.md5 (from step 2)', flashCheck: 'Check', flashChecking: 'Checking the archive and the device…',
+    ckSystem: 'System', ckArchive: 'Archive', ckImage: 'Image', ckDevice: 'Device on USB', ckAccess: 'HID access', ckMount: 'Update disk', ckPython: 'Python', ckApp: 'RØDE app', keysWord: 'SSH key(s)',
+    flashReady: 'Ready. Nothing has been sent to the device yet.', flashNotReady: 'Not ready yet: fix the items marked ✗, then check again.',
+    flashUnsupported: 'Flashing works on Windows and Linux with the device on USB, not on this system yet. Here you can check the folder; then run rcplug-setup (or rcplug-flash) on a Windows or Linux computer.',
+    flashUdev: 'Your user may not talk to the device yet. Install the udev rule once (in a terminal), unplug and replug the device, then check again:',
+    flashStage: 'Copy only (no flash)', flashGo: 'Flash…', confirmStage: 'Switch the device into update mode (audio stops) and copy the archive onto it? Nothing is flashed.',
+    flashConfirmTitle: 'Flash the firmware now?', flashConfirmText: 'The device writes this image to its inactive partition and reboots. Keep it switched on and connected until it has restarted (a few minutes). Once started, this cannot be stopped.',
+    flashTypeWord: 'Type flash to confirm', flashNow: 'Flash now', flashRunning: 'running — do not close this window, switch the device off or unplug it',
+    flashStaged: 'Copied onto the device; nothing was flashed. The device stays in update mode: switch it off and on again before the next run.',
+    flashDone: 'Flash command sent. The device now writes the firmware and reboots (a few minutes) — leave it on. Then connect in step 1 with your private key. The device has a new SSH host key afterwards; if ssh complains about it: ssh-keygen -R <address>',
+    flashFailed: 'The run failed:', flashStuck: 'If the device stays in update mode, switch it off and on again.', flashLost: 'Lost contact with the setup program.',
+  },
+  de: {
+    connTitle: 'Mit dem Gerät verbinden', connDesc: 'Adresse des RØDECaster eingeben. Anmeldung per SSH-Schlüssel (das Gerät nimmt kein Passwort).',
+    host: 'IP-Adresse oder Name', user: 'SSH-Benutzer', keyFile: 'SSH-Schlüssel (optional, sonst dein Standardschlüssel)', browse: 'Durchsuchen…', connect: 'Verbinden',
+    cfwTitle: 'Firmware vorbereiten (SSH-Schlüssel einfügen)', cfwDesc: 'Der Duo hat ab Werk kein SSH. Original-Firmware laden und deinen Schlüssel einfügen; Schritt 3 flasht das Ergebnis aufs Gerät.',
+    cfwBanner: 'Die Original-Firmware kommt direkt von RØDEs Update-Server – dieselben Dateien, die die RØDE-App installiert – und wird gegen RØDEs MD5 geprüft. rcplug fügt deinen Schlüssel ein; Schritt 3 flasht das Ergebnis per USB, siehe <a href="#" id="guideLink">docs/enable-ssh.md</a>. Firmware zu verändern geschieht auf eigene Gefahr.',
+    fwDevice: 'Gerät', devDownloadOnly: 'nur Download, ungetestet', devUnsupported: 'nicht unterstützt', devNoKeys: 'Für dieses Gerät kann rcplug Firmware laden und prüfen; einen Schlüssel einfügen geht bisher nur beim RØDECaster Duo.',
+    devFromDevice: 'Am verbundenen Gerät erkannt.', devOtherConnected: '⚠ Das verbundene Gerät ist ein {dev}.', unknownModel: 'unbekanntes Modell', firmwareWord: 'Firmware', onDevice: 'auf deinem Gerät', imgOther: 'Dieses Abbild ist für den {img}, nicht für den {dev}.', imgUnknown: 'Dieses Abbild gibt sich als kein bekanntes RØDECaster-Modell zu erkennen.', fwChecked: 'Geprüft:', imgChecking: 'prüfe das Abbild…', md5ok: 'passt zu seiner .md5',
+    fwTitle: 'a) Original-Firmware herunterladen', fwVersion: 'Version', fwDir: 'Speichern in Ordner', fwDownload: 'Herunterladen',
+    stable: 'stabil', beta: 'Beta', fwOther: 'Andere Version…', fwChecking: 'Frage RØDEs Server nach den aktuellen Versionen…',
+    fwLatest: 'Aktuelle Version von RØDE:', fwOffline: 'RØDEs Firmware-Liste ließ sich nicht lesen:', fwHint: 'Tipp: Am wenigsten ändert sich mit derselben Version, die dein Gerät schon hat (steht in seinen Einstellungen); ältere Versionen liegen weiter auf RØDEs Server.',
+    fwSaved: 'Gespeichert und geprüft:', fwReused: 'Schon heruntergeladen und intakt:', fwCancelled: 'Download abgebrochen.',
+    cfwKeyTitle: 'b) SSH-Schlüssel einfügen', cfwRootfs: 'Original-Firmware (os.tar.gz)', cfwKey: 'Dein öffentlicher SSH-Schlüssel (.pub)', genKey: 'Schlüssel erzeugen', cfwOut: 'Ausgabeordner', cfwBuild: 'Abbild erstellen',
+    installTitle: 'rcplug installieren oder aktualisieren', installDesc: 'Sobald SSH geht, rcplug aufs Gerät bringen.', payload: 'Release-Paket (rcplug-…-aarch64.tar.gz)', install: 'Installieren / aktualisieren', addPlugin: 'Plugin hinzufügen',
+    moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen oder rcplug entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren',
+    connecting: 'verbinde…', connected: 'verbunden', notConnected: 'nicht verbunden', failed: 'fehlgeschlagen',
+    working: 'arbeite…', done: 'fertig', cancel: 'Abbrechen', chooseFolder: 'Diesen Ordner wählen', pickFile: 'Datei wählen', pickDir: 'Ordner wählen',
+    quit: 'Beenden', langName: 'English', confirmUninstall: 'rcplug und alle Plugin-Daten vom Gerät entfernen?',
+    genDone: 'Schlüssel erstellt. Öffentlicher Schlüssel:', built: 'Abbild fertig:', flashNext: 'Weiter: in Schritt 3 flashen.', needConnectFirst: 'Zuerst mit dem Gerät verbinden (Schritt 1).',
+    flashTitle: 'Per USB flashen', flashDesc: 'Bringt das Abbild aus Schritt 2 aufs Gerät: schaltet es in den Update-Modus, kopiert archive.tar.gz auf sein Update-Laufwerk und flasht es – nur nach deiner Bestätigung – mit anschließendem Neustart. Braucht den Duo am USB und Windows oder Linux. Folgt dem Ablauf des Tools rodecaster-duo-ssh: unter Linux mit dessen mitgelieferten Skripten (Python 3), unter Windows mit denselben Schritten eingebaut – vorher die RØDECaster App schließen.',
+    flashBanner: 'Flashen überschreibt die inaktive Firmware-Partition des Geräts und startet es neu. Der Duo hat zwei Partitionen (A/B), ein fehlerhaftes Abbild lässt die andere also startfähig – trotzdem das Gerät beim Flashen nicht ausschalten oder abziehen. Die rcplug-Autoren haben diesen Schritt noch nicht an echter Hardware getestet. Das ist deine Entscheidung für dein eigenes Gerät.',
+    flashDir: 'Ordner mit archive.tar.gz und archive.md5 (aus Schritt 2)', flashCheck: 'Prüfen', flashChecking: 'Prüfe Archiv und Gerät…',
+    ckSystem: 'System', ckArchive: 'Archiv', ckImage: 'Abbild', ckDevice: 'Gerät am USB', ckAccess: 'HID-Zugriff', ckMount: 'Update-Laufwerk', ckPython: 'Python', ckApp: 'RØDE-App', keysWord: 'SSH-Schlüssel',
+    flashReady: 'Bereit. Bisher wurde nichts an das Gerät gesendet.', flashNotReady: 'Noch nicht bereit: die mit ✗ markierten Punkte beheben, dann erneut prüfen.',
+    flashUnsupported: 'Flashen geht unter Windows und Linux mit dem Gerät am USB, auf diesem System noch nicht. Hier kannst du den Ordner prüfen; dann rcplug-setup (oder rcplug-flash) auf einem Windows- oder Linux-Rechner starten.',
+    flashUdev: 'Dein Benutzer darf noch nicht mit dem Gerät sprechen. Einmalig die udev-Regel installieren (im Terminal), das Gerät ab- und wieder anstecken, dann erneut prüfen:',
+    flashStage: 'Nur kopieren (nicht flashen)', flashGo: 'Flashen…', confirmStage: 'Das Gerät in den Update-Modus schalten (Audio stoppt) und das Archiv daraufkopieren? Es wird nichts geflasht.',
+    flashConfirmTitle: 'Firmware jetzt flashen?', flashConfirmText: 'Das Gerät schreibt dieses Abbild in seine inaktive Partition und startet neu. Lass es eingeschaltet und angeschlossen, bis es neu gestartet ist (einige Minuten). Einmal gestartet, lässt sich das nicht abbrechen.',
+    flashTypeWord: 'Zur Bestätigung flash eintippen', flashNow: 'Jetzt flashen', flashRunning: 'läuft – dieses Fenster nicht schließen, das Gerät nicht ausschalten oder abziehen',
+    flashStaged: 'Aufs Gerät kopiert; es wurde nichts geflasht. Das Gerät bleibt im Update-Modus: vor dem nächsten Durchlauf aus- und wieder einschalten.',
+    flashDone: 'Flash-Befehl gesendet. Das Gerät schreibt jetzt die Firmware und startet neu (einige Minuten) – eingeschaltet lassen. Danach in Schritt 1 mit deinem privaten Schlüssel verbinden. Das Gerät hat dann einen neuen SSH-Host-Key; falls ssh sich darüber beschwert: ssh-keygen -R <adresse>',
+    flashFailed: 'Der Vorgang ist fehlgeschlagen:', flashStuck: 'Falls das Gerät im Update-Modus bleibt, aus- und wieder einschalten.', flashLost: 'Verbindung zum Setup-Programm verloren.',
+  },
+};
+if (!T[lang]) lang = 'en';
+document.documentElement.lang = lang;
+const t = (k) => (T[lang][k] ?? T.en[k] ?? k);
+const $ = (s) => document.querySelector(s);
+let connected = false;
+
+async function api(path, body) {
+  const r = await fetch('api/' + path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { 'X-Setup-Token': TOKEN, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+function applyText() {
+  document.querySelectorAll('[data-t]').forEach((el) => {
+    const v = t(el.dataset.t);
+    if (el.dataset.t === 'cfwBanner') el.innerHTML = v; else el.textContent = v;
+  });
+  $('#statusText').textContent = connected ? t('connected') : t('notConnected');
+  $('#lang').textContent = t('langName');
+  $('#quit').textContent = t('quit');
+  const g = document.getElementById('guideLink');
+  if (g) g.addEventListener('click', (e) => { e.preventDefault(); showLog('#cfwLog', 'docs/enable-ssh.md'); });
+}
+
+function showLog(sel, text, cls) {
+  const el = $(sel);
+  el.hidden = false;
+  el.textContent = text;
+  el.className = 'log' + (cls ? ' ' + cls : '');
+}
+
+function setConnected(on, report) {
+  connected = on;
+  $('#status').className = 'pill' + (on ? ' ok' : report === false ? ' bad' : '');
+  $('#statusText').textContent = on ? t('connected') : t('notConnected');
+  $('#cardInstall').classList.toggle('off', !on);
+  $('#cardMore').classList.toggle('off', !on);
+}
+
+async function withButton(btn, logSel, fn) {
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = t('working');
+  try {
+    const d = await fn();
+    if (logSel && d && 'log' in d) showLog(logSel, d.log || t('done'), 'ok');
+    return d;
+  } catch (e) {
+    if (logSel) showLog(logSel, '✗ ' + e.message, 'err');
+    return null;
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+
+$('#btnConnect').addEventListener('click', async () => {
+  const d = await withButton($('#btnConnect'), '#connLog', () =>
+    api('connect', { host: $('#host').value.trim(), user: $('#user').value.trim(), key: $('#connKey').value.trim() }));
+  if (d) {
+    setConnected(true); showLog('#connLog', d.report || t('connected'), 'ok');
+    connectedDevice = d.device || null;
+    if (connectedDevice && connectedDevice.model) {
+      $('#fwDevice').value = connectedDevice.model;
+      deviceChanged(t('devFromDevice'));
+    } else loadFirmware();
+  } else setConnected(false, false);
+});
+$('#btnGenKey').addEventListener('click', () =>
+  withButton($('#btnGenKey'), '#cfwLog', async () => {
+    const d = await api('genkey', {});
+    $('#cfwKey').value = d.publicKey;
+    showLog('#cfwLog', t('genDone') + '\n' + d.publicKeyText, 'ok');
+    return null;
+  }));
+$('#btnCfw').addEventListener('click', () =>
+  withButton($('#btnCfw'), '#cfwLog', async () => {
+    const d = await api('cfw', { device: $('#fwDevice').value, input: $('#cfwIn').value.trim(), out: $('#cfwOut').value.trim(),
+      keyPaths: $('#cfwKey').value.trim() ? [$('#cfwKey').value.trim()] : [] });
+    showLog('#cfwLog', `${t('fwChecked')} ${imageText(d.image)}${d.inputMD5 ? ' · ' + t('md5ok') : ''}\n\n${t('built')}\n${d.archive}\n${d.md5}\nmd5: ${d.digest}\n\n${t('flashNext')}`, 'ok');
+    $('#flashDir').value = d.outDir;
+    flashCheck();
+    return null;
+  }));
+$('#btnInstall').addEventListener('click', () => requireConn('#installLog') &&
+  withButton($('#btnInstall'), '#installLog', () => api('install', { payload: $('#payload').value.trim() })));
+$('#btnPlugin').addEventListener('click', () => requireConn('#installLog') &&
+  withButton($('#btnPlugin'), '#installLog', () => api('plugin', { dir: $('#pluginDir').value.trim() })));
+$('#btnDiag').addEventListener('click', () => requireConn('#moreLog') &&
+  withButton($('#btnDiag'), '#moreLog', () => api('diagnostics', { dir: $('#diagDir').value.trim() })));
+$('#btnPushKey').addEventListener('click', () => requireConn('#moreLog') &&
+  withButton($('#btnPushKey'), '#moreLog', () => api('pushkey', {})));
+$('#btnUninstall').addEventListener('click', () => {
+  if (!requireConn('#moreLog')) return;
+  if (!confirm(t('confirmUninstall'))) return;
+  withButton($('#btnUninstall'), '#moreLog', () => api('uninstall', {}));
+});
+// ---- firmware download
+let devices = [], connectedDevice = null;
+const imageText = (im) => im ? `${im.modelName || t('unknownModel') + ' (' + im.hostname + ')'}, ${t('firmwareWord')} ${im.version || '?'}` : '?';
+async function loadDevices() {
+  try { devices = (await api('devices')).devices; } catch (e) { devices = [{ id: 'duo', name: 'RØDECaster Duo', download: true, keys: true }]; }
+  const sel = $('#fwDevice');
+  sel.innerHTML = '';
+  devices.forEach((d) => {
+    const o = document.createElement('option');
+    o.value = d.id;
+    o.textContent = d.name + (!d.download ? ' (' + t('devUnsupported') + ')' : !d.keys ? ' (' + t('devDownloadOnly') + ')' : '');
+    o.disabled = !d.download;
+    sel.appendChild(o);
+  });
+  sel.value = 'duo';
+}
+function deviceChanged(note) {
+  const d = devices.find((x) => x.id === $('#fwDevice').value) || {};
+  const cd = connectedDevice;
+  if (!note && cd && cd.model && cd.model !== d.id) note = t('devOtherConnected').replace('{dev}', cd.modelName);
+  $('#devHint').textContent = note || '';
+  $('#cfwNoKeys').hidden = !!d.keys;
+  $('#cfwNoKeys').textContent = t('devNoKeys');
+  $('#btnCfw').disabled = !d.keys;
+  loadFirmware();
+  checkImage();
+}
+$('#fwDevice').addEventListener('change', () => deviceChanged(''));
+async function loadFirmware() {
+  const sel = $('#fwPick');
+  const device = $('#fwDevice').value || 'duo';
+  sel.innerHTML = '';
+  $('#fwInfo').textContent = t('fwChecking');
+  const listed = [];
+  try {
+    const d = await api('firmware?device=' + encodeURIComponent(device));
+    d.releases.forEach((r) => {
+      const o = document.createElement('option');
+      o.value = 'ch:' + r.channel; o.textContent = r.version + ' (' + t(r.channel) + ')';
+      sel.appendChild(o); listed.push(r.version);
+    });
+    $('#fwInfo').textContent = t('fwLatest') + ' ' + d.releases[0].version + '. ' + t('fwHint');
+  } catch (e) {
+    $('#fwInfo').textContent = t('fwOffline') + ' ' + e.message;
+  }
+  // Like RØDE's app, show what the connected device runs; offer exactly that.
+  const cd = connectedDevice;
+  if (cd && cd.model === device && /^\d+\.\d+\.\d+$/.test(cd.firmware || '') && !listed.includes(cd.firmware)) {
+    const o = document.createElement('option');
+    o.value = 'ver:' + cd.firmware; o.textContent = cd.firmware + ' (' + t('onDevice') + ')';
+    sel.insertBefore(o, sel.firstChild); sel.value = o.value;
+  }
+  const o = document.createElement('option');
+  o.value = 'other'; o.textContent = t('fwOther');
+  sel.appendChild(o);
+  sel.dispatchEvent(new Event('change'));
+}
+function mismatchText(d) {
+  const dev = (devices.find((x) => x.id === $('#fwDevice').value) || {}).name || '?';
+  if (d.image && d.image.modelName) return t('imgOther').replace('{img}', d.image.modelName).replace('{dev}', dev);
+  if (d.image) return t('imgUnknown') + ' (hostname "' + d.image.hostname + '")';
+  return d.mismatch;
+}
+// checkImage shows which model and version the chosen image is for.
+let checkSeq = 0;
+async function checkImage() {
+  const p = $('#cfwIn').value.trim(), el = $('#cfwInInfo'), seq = ++checkSeq;
+  el.className = 'hint'; el.textContent = p ? t('imgChecking') : '';
+  if (!p) return;
+  try {
+    const d = await api('inspect?device=' + encodeURIComponent($('#fwDevice').value || 'duo') + '&path=' + encodeURIComponent(p));
+    if (seq !== checkSeq) return;
+    el.className = 'hint ' + (d.mismatch ? 'err' : 'ok');
+    el.textContent = d.mismatch ? '✗ ' + mismatchText(d) : '✓ ' + imageText(d.image);
+  } catch (e) {
+    if (seq === checkSeq) { el.className = 'hint err'; el.textContent = '✗ ' + e.message; }
+  }
+}
+$('#cfwIn').addEventListener('change', checkImage);
+$('#fwPick').addEventListener('change', () => {
+  const other = $('#fwPick').value === 'other';
+  $('#fwOther').hidden = !other;
+  if (other) $('#fwOther').focus();
+});
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function showBar(done, total) {
+  $('#fwBar').hidden = false; $('#fwBarText').hidden = false;
+  const pct = total > 0 ? Math.floor(done * 100 / total) : 0;
+  $('#fwBar').firstElementChild.style.width = pct + '%';
+  $('#fwBarText').textContent = total > 0 ? `${pct} % · ${(done / 1048576).toFixed(0)} / ${(total / 1048576).toFixed(0)} MB` : `${(done / 1048576).toFixed(0)} MB`;
+}
+$('#btnFw').addEventListener('click', async () => {
+  const sel = $('#fwPick').value;
+  const body = { device: $('#fwDevice').value, dir: $('#fwDir').value.trim() };
+  if (sel === 'other') body.version = $('#fwOther').value.trim();
+  else if (sel.startsWith('ver:')) body.version = sel.slice(4);
+  else body.channel = sel.slice(3);
+  const btn = $('#btnFw');
+  btn.disabled = true; $('#btnFwCancel').hidden = false; $('#fwLog').hidden = true;
+  try {
+    const start = await api('firmware/download', body);
+    showLog('#fwLog', start.url);
+    showBar(0, 0);
+    for (;;) {
+      await sleep(400);
+      const p = await api('firmware/progress');
+      showBar(p.done, p.total);
+      if (p.state === 'running') continue;
+      if (p.state === 'done') {
+        const r = p.result;
+        $('#cfwIn').value = r.path;
+        showBar(r.size, r.size);
+        showLog('#fwLog', `${r.reused ? t('fwReused') : t('fwSaved')}\n${r.path}\nmd5: ${r.md5}\n${t('fwChecked')} ${imageText(r.image)}`, 'ok');
+        $('#cfwInInfo').className = 'hint ok'; $('#cfwInInfo').textContent = '✓ ' + imageText(r.image);
+        $('#fwBar').firstElementChild.style.width = '100%';
+      } else {
+        showLog('#fwLog', p.failure === 'cancelled' ? t('fwCancelled') : '✗ ' + p.failure, 'err');
+      }
+      break;
+    }
+  } catch (e) {
+    showLog('#fwLog', '✗ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; $('#btnFwCancel').hidden = true;
+  }
+});
+$('#btnFwCancel').addEventListener('click', () => api('firmware/cancel', {}).catch(() => {}));
+
+// ---- flash over USB (step 3)
+let flashRep = null, flashBusy = false, flashSeq = 0;
+const ckLabel = { system: 'ckSystem', archive: 'ckArchive', image: 'ckImage', device: 'ckDevice', access: 'ckAccess', mount: 'ckMount', python: 'ckPython', app: 'ckApp' };
+function setFlashButtons() {
+  const ready = !!(flashRep && flashRep.ready) && !flashBusy;
+  $('#btnStage').disabled = !ready; $('#btnFlash').disabled = !ready;
+  $('#btnFlashCheck').disabled = flashBusy;
+}
+// flashCheck shows the pre-flight checks; they only read files and device information.
+async function flashCheck() {
+  const dir = $('#flashDir').value.trim(), seq = ++flashSeq, list = $('#flashChecks'), st = $('#flashState');
+  flashRep = null; setFlashButtons();
+  $('#flashUdev').hidden = true; list.innerHTML = ''; list.hidden = true;
+  st.className = 'hint'; st.textContent = dir ? t('flashChecking') : '';
+  if (!dir) return;
+  try {
+    const d = await api('flash/check?dir=' + encodeURIComponent(dir));
+    if (seq !== flashSeq) return;
+    flashRep = d;
+    (d.report.checks || []).forEach((c) => {
+      const li = document.createElement('li');
+      li.className = !c.ok ? 'err' : c.warn ? 'warn' : 'ok';
+      const ic = document.createElement('span'); ic.textContent = !c.ok ? '✗' : c.warn ? '⚠' : '✓';
+      const lb = document.createElement('span'); lb.textContent = t(ckLabel[c.id] || c.id);
+      const dt = document.createElement('span'); dt.className = 'd'; dt.textContent = c.detail;
+      li.append(ic, lb, dt); list.appendChild(li);
+    });
+    list.hidden = false;
+    if (d.udevRule) showLog('#flashUdev', t('flashUdev') + "\n\nsudo tee /etc/udev/rules.d/70-rode-hidraw.rules >/dev/null <<'EOF'\n" +
+      d.udevRule.replace(/\n?$/, '\n') + 'EOF\nsudo udevadm control --reload && sudo udevadm trigger');
+    st.className = 'hint ' + (d.ready ? 'ok' : 'err');
+    st.textContent = d.ready ? t('flashReady') : !d.supported ? t('flashUnsupported') : t('flashNotReady');
+  } catch (e) {
+    if (seq === flashSeq) { st.className = 'hint err'; st.textContent = '✗ ' + e.message; }
+  }
+  setFlashButtons();
+}
+async function flashStart(doFlash) {
+  const body = { dir: $('#flashDir').value.trim(), flash: doFlash };
+  if (doFlash) body.confirm = $('#flashWord').value.trim();
+  try { await api('flash/start', body); } catch (e) { showLog('#flashLog', '✗ ' + e.message, 'err'); return; }
+  pollFlash();
+}
+function flashLog(text, cls) { showLog('#flashLog', text, cls); $('#flashLog').scrollTop = $('#flashLog').scrollHeight; }
+// pollFlash follows a run until it ends; the window must stay open meanwhile.
+async function pollFlash() {
+  flashBusy = true; setFlashButtons(); $('#quit').disabled = true;
+  window.onbeforeunload = (e) => { e.preventDefault(); e.returnValue = ''; return ''; };
+  let p = null, misses = 0;
+  for (;;) {
+    try { p = await api('flash/progress'); misses = 0; } catch (e) { if (++misses > 15) { p = null; break; } await sleep(1000); continue; }
+    if (p.state !== 'running') break;
+    flashLog(p.log + '\n⏳ ' + p.seconds + ' s · ' + t('flashRunning'));
+    await sleep(700);
+  }
+  flashBusy = false; $('#quit').disabled = false; window.onbeforeunload = null;
+  // The device has changed (update mode, or rebooting): check again before another run.
+  flashRep = null; $('#flashChecks').hidden = true; $('#flashState').textContent = '';
+  if (!p) flashLog('✗ ' + t('flashLost'), 'err');
+  else if (p.state === 'done') {
+    flashLog(p.log + '\n✓ ' + (p.flash ? t('flashDone') : t('flashStaged')), 'ok');
+    const pub = $('#cfwKey').value.trim(); // the key from step 2 logs in afterwards
+    if (p.flash && !$('#connKey').value.trim() && pub.endsWith('.pub')) $('#connKey').value = pub.slice(0, -4);
+  } else flashLog(p.log + '\n✗ ' + t('flashFailed') + ' ' + p.failure + '\n' + t('flashStuck'), 'err');
+  setFlashButtons();
+}
+$('#btnFlashCheck').addEventListener('click', flashCheck);
+$('#flashDir').addEventListener('change', flashCheck);
+$('#btnStage').addEventListener('click', () => { if (confirm(t('confirmStage'))) flashStart(false); });
+$('#btnFlash').addEventListener('click', () => {
+  const r = flashRep && flashRep.report;
+  if (!r || !r.image) return;
+  $('#flashSummary').textContent = `${imageText(r.image)} · ${r.image.keys} ${t('keysWord')}\n${r.staging.archive}\n→ ${r.node}`;
+  $('#flashWord').value = ''; $('#flashYes').disabled = true;
+  $('#flashDlg').showModal(); $('#flashWord').focus();
+});
+$('#flashWord').addEventListener('input', () => { $('#flashYes').disabled = $('#flashWord').value.trim() !== 'flash'; });
+$('#flashNo').addEventListener('click', () => $('#flashDlg').close());
+$('#flashYes').addEventListener('click', () => { $('#flashDlg').close(); flashStart(true); });
+
+function requireConn(logSel) { if (!connected) { showLog(logSel, t('needConnectFirst'), 'err'); return false; } return true; }
+
+$('#lang').addEventListener('click', () => { try { localStorage.setItem('rcplug-lang', lang === 'de' ? 'en' : 'de'); } catch (e) {} location.reload(); });
+$('#quit').addEventListener('click', async () => { try { await api('quit', {}); } catch (e) {} document.body.innerHTML = '<main><div class="card">' + t('quit') + ' ✓</div></main>'; });
+
+// ---- file picker
+let pickTarget = null, pickMode = 'file', pickPath = '';
+document.querySelectorAll('[data-browse]').forEach((b) =>
+  b.addEventListener('click', () => openPicker(b.dataset.browse, b.dataset.mode)));
+async function openPicker(target, mode) {
+  pickTarget = target; pickMode = mode;
+  $('#pkChoose').style.display = mode === 'dir' ? '' : 'none';
+  $('#pkHint').textContent = mode === 'dir' ? t('pickDir') : t('pickFile');
+  const start = $('#' + target).value.trim();
+  await loadDir(start || '');
+  $('#picker').showModal();
+}
+async function loadDir(p) {
+  let d;
+  try { d = await api('browse?path=' + encodeURIComponent(p)); }
+  catch (e) { d = await api('browse?path='); }
+  pickPath = d.path;
+  $('#pkCur').textContent = d.path;
+  $('#pkRoots').innerHTML = '';
+  (d.roots || []).forEach((r) => { const b = document.createElement('button'); b.className = 'small'; b.textContent = r.name; b.onclick = () => loadDir(r.path); $('#pkRoots').appendChild(b); });
+  const list = $('#pkList'); list.innerHTML = '';
+  (d.dirs || []).forEach((e) => list.appendChild(entry(e, true)));
+  if (pickMode === 'file') (d.files || []).forEach((e) => list.appendChild(entry(e, false)));
+  $('#pkUp').onclick = () => d.parent && loadDir(d.parent);
+}
+function entry(e, isDir) {
+  const div = document.createElement('div');
+  div.className = 'entry ' + (isDir ? 'dir' : 'file');
+  div.innerHTML = '<span class="ic">' + (isDir ? '📁' : '📄') + '</span>';
+  const name = document.createElement('span'); name.textContent = e.name; div.appendChild(name);
+  if (!isDir) { const sz = document.createElement('span'); sz.className = 'sz'; sz.textContent = fmtSize(e.size); div.appendChild(sz); }
+  div.onclick = () => { if (isDir) loadDir(e.path); else { setPicked(e.path); $('#picker').close(); } };
+  return div;
+}
+function fmtSize(n) { if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(0) + ' KB'; return (n / 1048576).toFixed(1) + ' MB'; }
+function setPicked(v) { const el = $('#' + pickTarget); el.value = v; el.dispatchEvent(new Event('change')); }
+$('#pkChoose').addEventListener('click', () => { setPicked(pickPath); $('#picker').close(); });
+$('#pkCancel').addEventListener('click', () => $('#picker').close());
+
+(async () => {
+  applyText();
+  setConnected(false);
+  try {
+    const env = await api('env');
+    if (env.defaultPayload) $('#payload').value = env.defaultPayload;
+    if (env.home) { $('#cfwOut').value = (env.cwd || env.home); $('#diagDir').value = (env.cwd || env.home); $('#fwDir').value = (env.cwd || env.home); $('#flashDir').value = (env.cwd || env.home); }
+    if (env.flash === false) { $('#flashOS').hidden = false; $('#flashOS').textContent = t('flashUnsupported'); }
+  } catch (e) {}
+  try { const p = await api('flash/progress'); if (p.state === 'running') { $('#flashDir').value = p.dir; pollFlash(); } } catch (e) {}
+  await loadDevices();
+  deviceChanged('');
+})();
+</script>
+</body>
+</html>

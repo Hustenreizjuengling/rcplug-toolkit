@@ -1,0 +1,18 @@
+# Build output (binaries, payload, release tarballs), produced by `make`.
+/dist/
+# Go test and coverage artefacts
+*.test
+*.out
+coverage.*
+# Editors and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+# State written by plugins started from the source tree
+# Command binaries accidentally built into the repository root
+/rcplug-setup
+/rcplug-cfw
+/rcplug-flash
+__pycache__/
+*.pyc

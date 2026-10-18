@@ -1,0 +1,31 @@
+rcplug for Windows / rcplug für Windows
+=======================================
+
+English
+  1. Unpack this zip into a folder.
+  2. Double-click rcplug-setup.exe. It opens a setup window in your browser
+     (install/update, prepare firmware with your SSH key, flash it over USB,
+     diagnostics). Before flashing: connect the Duo by USB and close the
+     RODECaster App. rcplug-flash.exe does the flashing from a command prompt.
+     If you do not want to run an .exe: double-click rcplug-setup.cmd instead.
+     It does the same from a text menu, using only the ssh and tar commands
+     built into Windows 10/11 (but it cannot flash).
+  3. Open http://<device-ip>:8080/ in your browser.
+  Needs: root access over SSH to the RØDECaster, and the "OpenSSH Client"
+  (Settings > Apps > Optional features), which Windows 10/11 usually include.
+
+Deutsch
+  1. Dieses ZIP in einen Ordner entpacken.
+  2. rcplug-setup.exe doppelklicken. Es öffnet ein Setup-Fenster im Browser
+     (installieren/aktualisieren, Firmware mit deinem SSH-Schlüssel vorbereiten,
+     per USB flashen, Diagnose). Vor dem Flashen: den Duo per USB anschließen
+     und die RODECaster App schließen. rcplug-flash.exe flasht von der
+     Eingabeaufforderung aus. Wer keine .exe ausführen möchte: stattdessen
+     rcplug-setup.cmd doppelklicken. Das macht dasselbe über ein Textmenü und
+     nutzt nur die Befehle ssh und tar, die Windows 10/11 mitbringen (flashen
+     kann es nicht).
+  3. Im Browser http://<geräte-ip>:8080/ öffnen.
+  Voraussetzung: root-Zugang per SSH zum RØDECaster und der "OpenSSH-Client"
+  (Einstellungen > Apps > Optionale Features), den Windows 10/11 meist schon hat.
+
+Check the files / Dateien prüfen:  certutil -hashfile <file> SHA256  (compare with SHA256SUMS)
