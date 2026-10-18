@@ -10,7 +10,7 @@ HOSTOS   := $(shell $(GO) env GOOS)
 LDFLAGS  := -s -w -X main.version=$(VERSION)
 
 TOOLS         := rcplug-setup rcplug-cfw rcplug-flash
-SHELL_SCRIPTS := installer/rcplug-wizard.sh installer/rcplug-remote.sh tools/installer-test.sh
+SHELL_SCRIPTS := installer/rcplug-wizard.sh installer/rcplug-remote.sh tools/installer-test.sh tools/release-version.sh
 
 # The rcplug platform repository, for the installer test and the device
 # package in the Windows zip (until the toolkit downloads it from releases).
@@ -18,7 +18,7 @@ RCPLUG         ?= ../rcplug
 RCPLUG_VERSION ?= $(shell cat $(RCPLUG)/VERSION 2>/dev/null)
 PAYLOAD        ?= $(RCPLUG)/dist/rcplug-$(RCPLUG_VERSION)-aarch64.tar.gz
 
-.PHONY: help all check fmt fmt-check vet lint test test-race test-windows installer-test \
+.PHONY: help all check fmt fmt-check vet lint test test-race test-windows installer-test docs-check \
         build package clean
 
 help: ## show this help
@@ -26,7 +26,7 @@ help: ## show this help
 
 all: check package ## run all checks and build the release files
 
-check: fmt-check vet test-race lint ## everything CI runs (except the Windows and installer tests)
+check: fmt-check vet test-race lint docs-check ## everything CI runs (except the Windows and installer tests)
 
 fmt: ## format the Go code
 	gofmt -w .
@@ -40,6 +40,9 @@ vet: ## go vet, also as Windows code (it has its own flash path)
 
 lint: ## shellcheck the shell scripts
 	shellcheck $(SHELL_SCRIPTS)
+
+docs-check: ## every relative link and #anchor in the Markdown files resolves
+	$(GO) run ./tools/doclinks
 
 test: ## unit tests
 	$(GO) test ./...

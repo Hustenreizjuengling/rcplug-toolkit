@@ -10,6 +10,15 @@ First release as its own repository. The tools come from rcplug 0.4.0 (wizard an
 device-side script) and everything added since.
 
 ### Added
+- Automation on GitHub: every push to `main` publishes the pre-release *Development
+  build* with the Windows zip (`rcplug-setup.exe`, `rcplug-flash.exe`), the setup
+  programs for macOS and Linux, the firmware tool and the wizard; releases can be made
+  with one click (*Actions → Release → Run workflow*); `govulncheck` (also for the
+  Windows programs) runs on every push and weekly, CodeQL once the repository is
+  public; Dependabot proposes new versions of the GitHub Actions; `make docs-check`
+  checks every link and anchor in the docs.
+- Release files are built with the current Go release instead of the minimum version
+  from `go.mod`; CI still tests the minimum version.
 - `rcplug-cfw`: adds your SSH public key to the stock Duo firmware image (`os.tar.gz`)
   for enabling SSH on a device that has none out of the box, preserving order,
   ownership, modes, symlinks, device nodes and extended attributes, with no fakeroot

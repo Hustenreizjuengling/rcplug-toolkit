@@ -35,6 +35,9 @@ data or your productions. Do not use it during a show that must not fail.
 1. **Download** the toolkit for your computer from the [releases](../../releases):
    - Windows 10/11: `rcplug-toolkit-<version>-windows.zip`, unpack it.
    - macOS, Linux: `rcplug-setup-<version>-<system>`, then `chmod +x` it.
+
+   The pre-release *Development build* has the same files built from the newest code,
+   for testing.
 2. **Start the setup** (`rcplug-setup.exe` on Windows). It opens a page in your browser
    with five steps:
    1. connect to the device (its IP address and your SSH key),

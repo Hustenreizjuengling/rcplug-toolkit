@@ -37,6 +37,9 @@ einsetzen, die nicht ausfallen darf.
 1. **Herunterladen** aus den [Releases](../../releases):
    - Windows 10/11: `rcplug-toolkit-<version>-windows.zip`, entpacken.
    - macOS, Linux: `rcplug-setup-<version>-<system>`, dann `chmod +x`.
+
+   Die Vorabversion *Development build* enthält dieselben Dateien aus dem neuesten
+   Code, zum Testen.
 2. **Setup starten** (unter Windows `rcplug-setup.exe`). Es öffnet eine Seite im
    Browser mit fünf Schritten:
    1. mit dem Gerät verbinden (IP-Adresse und dein SSH-Schlüssel),

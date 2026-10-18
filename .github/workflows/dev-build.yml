@@ -1,0 +1,53 @@
+name: Development build
+
+# Every push to main publishes the current state as the pre-release "dev",
+# replacing the previous one: the Windows zip (rcplug-setup.exe,
+# rcplug-flash.exe, …), the setup programs for macOS and Linux, the firmware
+# tool and the wizard, versioned <version>-dev.<run>. The Windows zip contains
+# rcplug's own development build when rcplug's releases can be read from here
+# (once rcplug is public).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dev-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and publish the pre-release "dev"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: rcplug's development build, for the Windows zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p payload
+          gh release download dev --repo "${{ github.repository_owner }}/rcplug" --pattern 'rcplug-[0-9]*-aarch64.tar.gz' --dir payload || true
+          ls payload
+      - name: Build
+        run: |
+          v="$(cat VERSION)-dev.${GITHUB_RUN_NUMBER}"
+          echo "DEV_VERSION=$v" >> "$GITHUB_ENV"
+          payload=""
+          for f in payload/rcplug-*-aarch64.tar.gz; do [ -f "$f" ] && payload="$f"; done
+          make package VERSION="$v" PAYLOAD="$payload"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Development build of commit ${GITHUB_SHA::7}, for testing. Windows: download rcplug-toolkit-${DEV_VERSION}-windows.zip. For anything else use a release."
+          gh release delete dev --cleanup-tag --yes 2>/dev/null || true
+          gh release create dev --prerelease --target "$GITHUB_SHA" --title "Development build $DEV_VERSION" --notes "$notes" \
+            dist/rcplug-toolkit-*-windows.zip dist/rcplug-setup-* dist/rcplug-cfw-* dist/rcplug-flash-* \
+            dist/rcplug-wizard.sh dist/rcplug-remote.sh dist/SHA256SUMS

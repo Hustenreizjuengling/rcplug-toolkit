@@ -57,8 +57,31 @@ docs/                documentation
 - Shell scripts that run on the device are POSIX sh (bash as `sh` on the Duo) and pass
   shellcheck.
 
+## Automation on GitHub
+
+| Workflow | When | What |
+|---|---|---|
+| CI | every push and pull request | `make check` (gofmt, vet also as Windows code, race tests, shellcheck, doc links), the tests with the minimum Go version, the flash and setup tests on a Windows runner, the installer end-to-end test with rcplug (once rcplug is public) and the release files as an artifact |
+| Development build | every push to `main` | the pre-release **dev** ("Development build"): the Windows zip with `rcplug-setup.exe` and `rcplug-flash.exe`, the setup programs for macOS and Linux, the firmware tool and the wizard as `<version>-dev.<run>`, replaced by every push. The Windows zip contains rcplug's development build once rcplug is public |
+| Release | a tag `v<version>`, or a click | see below |
+| Security | every push, pull request and weekly | `govulncheck` (known vulnerabilities in the Go standard library and in code the programs use); CodeQL code scanning, once the repository is public |
+| Dependabot | weekly | pull requests for new versions of the GitHub Actions |
+
+Release files are built with the current Go release (`go-version: stable`); a CI job
+tests with the minimum version from `go.mod` as well.
+
 ## Releasing
 
-Update `VERSION`, add a section to `CHANGELOG.md`, commit, tag `v<version>` and push
-the tag. The release workflow checks the tag against `VERSION`, runs the tests and
-publishes the release files.
+Every change describes itself under the newest section of `CHANGELOG.md`,
+`## <version> - Unreleased`. Release rcplug first: the Windows zip includes the device package of rcplug's latest release.
+
+**With one click:** *Actions → Release → Run workflow* (or
+`gh workflow run release.yml -f version=X.Y.Z`; without a version it takes the one in
+`VERSION`). The run dates the changelog's "Unreleased" section as that version, sets
+`VERSION`, commits and tags, then builds, publishes the GitHub release
+with the changelog section as notes, and finally starts the next patch version's
+"Unreleased" section.
+
+**By hand:** set the date and `VERSION` yourself (`tools/release-version.sh prepare
+X.Y.Z` does it), commit, tag `v<version>` and push the tag; the release workflow builds,
+and publishes.
