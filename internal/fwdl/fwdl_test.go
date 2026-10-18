@@ -227,7 +227,7 @@ func TestDownloadErrors(t *testing.T) {
 	}
 
 	evil := Release{Version: "1.7.6", URL: "http://example.com/os.tar.gz", MD5URL: "http://example.com/os.md5"}
-	if _, err := Download(context.Background(), Client(), f.model, evil, dir, nil); err == nil || !strings.Contains(err.Error(), "not a RØDE update host") {
+	if _, err := Download(context.Background(), Client(), f.model, evil, dir, nil); err == nil || !strings.Contains(err.Error(), "refusing to download from") {
 		t.Fatalf("foreign host: %v", err)
 	}
 }

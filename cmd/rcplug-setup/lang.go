@@ -3,9 +3,30 @@ package main
 import (
 	"os"
 	"strings"
+	"sync"
 )
 
-var lang = "en"
+var (
+	langMu sync.RWMutex
+	lang   = "en"
+)
+
+// curLang is the language of messages now ("de" or "en"); the setup window
+// switches it with every request (useLang).
+func curLang() string {
+	langMu.RLock()
+	defer langMu.RUnlock()
+	return lang
+}
+
+func useLang(l string) {
+	if l != "de" && l != "en" {
+		return
+	}
+	langMu.Lock()
+	lang = l
+	langMu.Unlock()
+}
 
 // setLang picks German or English: the --lang flag, RCPLUG_LANG, the usual
 // locale variables, then the system's language (Windows).
@@ -15,16 +36,16 @@ func setLang(flagValue string) {
 			continue
 		}
 		if strings.HasPrefix(strings.ToLower(v), "de") {
-			lang = "de"
+			useLang("de")
 		} else {
-			lang = "en"
+			useLang("en")
 		}
 		return
 	}
 }
 
 func tr(key string) string {
-	if s, ok := texts[lang][key]; ok {
+	if s, ok := texts[curLang()][key]; ok {
 		return s
 	}
 	return texts["en"][key]
@@ -39,9 +60,9 @@ var texts = map[string]map[string]string{
 		"m1": "1  Install or update rcplug", "m2": "2  Download diagnostics (logs and device state)", "m3": "3  Install or update a plugin from a folder",
 		"m4": "4  Uninstall rcplug", "m5": "5  Add this computer's SSH key to the device (uses the login that works now)", "m6": "6  Show the state again", "m0": "0  Exit",
 		"choose": "Choose: ", "pluginDir": "Folder of the plugin: ", "state": "rcplug on the device:", "notInstalled": "rcplug is not installed on the device yet.",
-		"problems": "   The device logged problems:", "problemsHint": "   Menu 2 downloads everything for a bug report.",
+		"problems": "   The device logged problems:", "problemsHint": "   “Download diagnostics” saves everything for a bug report.",
 		"noPayload": "No rcplug-<version>-aarch64.tar.gz found next to this program.", "sending": "Sending", "installing": "Installing on the device …",
-		"noDiag": "The device returned no diagnostics.", "saved": "Saved:", "diagNote": "Passwords and keys are masked. Review the file before sharing it publicly.",
+		"noDiag": "The device returned no diagnostics.", "saved": "Saved:", "diagNote": "Passwords, keys and the values of settings are masked. Review the file before sharing it publicly.",
 		"badPlugin":        "The folder needs a plugin.json and a name of a-z, 0-9, - and _.",
 		"confirmUninstall": "Really remove rcplug and ALL plugin data from the device? (yes/no): ", "aborted": "Cancelled.",
 		"keygen": "Creating an SSH key for this computer …", "keySend": "Adding the key to the device …", "keyOK": "Done. This computer's key works on the device now too (until the next firmware update).",
@@ -61,9 +82,9 @@ var texts = map[string]map[string]string{
 		"m1": "1  rcplug installieren oder aktualisieren", "m2": "2  Diagnose herunterladen (Logs und Gerätezustand)", "m3": "3  Plugin aus einem Ordner installieren oder aktualisieren",
 		"m4": "4  rcplug deinstallieren", "m5": "5  SSH-Schlüssel dieses Rechners auf dem Gerät hinterlegen (über die Anmeldung, die jetzt geht)", "m6": "6  Zustand erneut anzeigen", "m0": "0  Beenden",
 		"choose": "Auswahl: ", "pluginDir": "Ordner des Plugins: ", "state": "rcplug auf dem Gerät:", "notInstalled": "rcplug ist auf dem Gerät noch nicht installiert.",
-		"problems": "   Das Gerät hat Probleme protokolliert:", "problemsHint": "   Menü 2 lädt alles für einen Fehlerbericht herunter.",
+		"problems": "   Das Gerät hat Probleme protokolliert:", "problemsHint": "   „Diagnose herunterladen“ speichert alles für einen Fehlerbericht.",
 		"noPayload": "Keine rcplug-<version>-aarch64.tar.gz neben diesem Programm gefunden.", "sending": "Übertrage", "installing": "Installiere auf dem Gerät …",
-		"noDiag": "Das Gerät hat keine Diagnose geliefert.", "saved": "Gespeichert:", "diagNote": "Passwörter und Schlüssel sind maskiert. Vor dem öffentlichen Teilen bitte durchsehen.",
+		"noDiag": "Das Gerät hat keine Diagnose geliefert.", "saved": "Gespeichert:", "diagNote": "Passwörter, Schlüssel und die Werte von Einstellungen sind maskiert. Vor dem öffentlichen Teilen bitte durchsehen.",
 		"badPlugin":        "Der Ordner braucht eine plugin.json und einen Namen aus a-z, 0-9, - und _.",
 		"confirmUninstall": "rcplug und ALLE Plugin-Daten wirklich vom Gerät entfernen? (ja/nein): ", "aborted": "Abgebrochen.",
 		"keygen": "Erzeuge einen SSH-Schlüssel für diesen Rechner …", "keySend": "Hinterlege den Schlüssel auf dem Gerät …", "keyOK": "Fertig. Der Schlüssel dieses Rechners funktioniert jetzt auch (bis zum nächsten Firmware-Update).",

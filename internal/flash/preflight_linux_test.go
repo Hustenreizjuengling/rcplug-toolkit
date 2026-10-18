@@ -19,6 +19,10 @@ func TestPythonCheck(t *testing.T) {
 	if c := pythonCheck(old); c.OK || !strings.Contains(c.Detail, "Python 2.7.18") {
 		t.Fatalf("pythonCheck(old) = %+v", c)
 	}
+	// Something that exits 0 without printing a version is not Python.
+	if c := pythonCheck("/bin/true"); c.OK {
+		t.Fatalf("pythonCheck(/bin/true) = %+v", c)
+	}
 	py, err := exec.LookPath("python3")
 	if err != nil {
 		t.Skip("no python3 here")

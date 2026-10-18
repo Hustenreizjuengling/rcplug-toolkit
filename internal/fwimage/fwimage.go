@@ -10,6 +10,9 @@ package fwimage
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -104,9 +107,33 @@ type Info struct {
 	HasPasswd  bool     `json:"hasPasswd"`
 	ModelID    string   `json:"model"`     // "" if no known model matches
 	ModelName  string   `json:"modelName"` // display name of ModelID
-	// Keys counts the keys in every .ssh/authorized_keys. A stock image has
-	// none, so flashing it as is gives no SSH access.
+	// Keys counts the keys in every .ssh/authorized_keys that are not RØDE's
+	// own. Flashing an image without one gives no SSH access.
 	Keys int `json:"keys"`
+	// VendorKeys counts RØDE's own keys (stock 1.7.3 has two in root's
+	// authorized_keys; 1.7.6 has none).
+	VendorKeys int `json:"vendorKeys"`
+}
+
+// vendorKeys are the SHA-256 fingerprints (as ssh-keygen -l prints them) of
+// the keys RØDE put into root's authorized_keys in stock firmware 1.7.3.
+var vendorKeys = map[string]bool{
+	"SHA256:6/X9EwH08yI/oW0Z19hMX9ZmUXKa6VSauwHgPYH5qhU": true, // RSA 4096
+	"SHA256:CvYDlYDZBvjaHrgiwRu3nl+Se0c4fsEGqz42t/vanII": true, // Ed25519
+}
+
+// keyFingerprint returns the SHA-256 fingerprint of an authorized_keys line
+// ("" if it has no readable key).
+func keyFingerprint(line string) string {
+	for _, f := range strings.Fields(line) {
+		blob, err := base64.StdEncoding.DecodeString(f)
+		if err != nil || len(blob) < 20 {
+			continue
+		}
+		sum := sha256.Sum256(blob)
+		return "SHA256:" + base64.RawStdEncoding.EncodeToString(sum[:])
+	}
+	return ""
 }
 
 // Scanner collects Info while the caller reads a tar stream; Observe is
@@ -139,7 +166,12 @@ func (s *Scanner) Observe(hdr *tar.Header, r io.Reader) error {
 	case path.Base(name) == "authorized_keys" && path.Base(path.Dir(name)) == ".ssh":
 		b, rerr := io.ReadAll(io.LimitReader(r, 1<<20))
 		for _, line := range strings.Split(string(b), "\n") {
-			if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "#") {
+			if line = strings.TrimSpace(line); line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			if vendorKeys[keyFingerprint(line)] {
+				s.info.VendorKeys++
+			} else {
 				s.info.Keys++
 			}
 		}
@@ -175,13 +207,16 @@ func identify(in *Info) (Model, bool) {
 }
 
 // Inspect reads a gzipped firmware image and reports what it is.
-func Inspect(file string) (*Info, error) {
+func Inspect(file string) (*Info, error) { return InspectContext(context.Background(), file) }
+
+// InspectContext is Inspect that stops when ctx ends (Ctrl+C).
+func InspectContext(ctx context.Context, file string) (*Info, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	gz, err := gzip.NewReader(f)
+	gz, err := gzip.NewReader(ContextReader(ctx, f))
 	if err != nil {
 		return nil, fmt.Errorf("%s is not a gzipped firmware image: %w", file, err)
 	}
@@ -225,6 +260,40 @@ func (in *Info) Check(want Model, version string) error {
 }
 
 // Describe is a one-line summary for people.
+// ContextReader reads from r until ctx ends; then it returns ctx's error, so
+// that long reads of a firmware image can be interrupted.
+func ContextReader(ctx context.Context, r io.Reader) io.Reader {
+	if ctx == nil {
+		return r
+	}
+	return &ctxReader{ctx: ctx, r: r}
+}
+
+type ctxReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+func (c *ctxReader) Read(p []byte) (int, error) {
+	if err := c.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return c.r.Read(p)
+}
+
+// KeysText says which SSH keys an image holds, e.g. "1 SSH key (and 2 of
+// RØDE's own)".
+func (in *Info) KeysText() string {
+	s := fmt.Sprintf("%d SSH key(s)", in.Keys)
+	if in.Keys == 0 {
+		s = "no SSH key of yours"
+	}
+	if in.VendorKeys > 0 {
+		s += fmt.Sprintf(" (and %d of RØDE's own)", in.VendorKeys)
+	}
+	return s
+}
+
 func (in *Info) Describe() string {
 	name := in.ModelName
 	if name == "" {

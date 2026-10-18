@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -75,12 +76,13 @@ func main() {
 		return
 	}
 	if *inspect != "" {
-		in, err := fwimage.Inspect(*inspect)
+		in, err := fwimage.InspectContext(ctx, *inspect)
 		if err != nil {
 			fatal(err)
 		}
 		fmt.Println(in.Describe())
 		fmt.Printf("hostname %q, device tree %v, %d entries\n", in.Hostname, in.DTBs, in.Entries)
+		fmt.Println(in.KeysText())
 		return
 	}
 	model, err := fwimage.ModelByID(*device)
@@ -102,7 +104,7 @@ func main() {
 	if *download != "" && *in != "" {
 		fatal(fmt.Errorf("give either --in or --download, not both"))
 	}
-	if *download == "" && (*in == "" || len(keyFiles) == 0) {
+	if *download == "" && (*in == "" || (len(keyFiles) == 0 && !*enablePw)) {
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -135,7 +137,7 @@ func main() {
 		*in = path
 	}
 
-	res, err := cfw.Build(cfw.Options{Input: *in, Model: model.ID, OutDir: *out, PublicKeys: keys,
+	res, err := cfw.Build(cfw.Options{Context: ctx, Input: *in, Model: model.ID, OutDir: *out, PublicKeys: keys,
 		EnablePasswordAuth: *enablePw, MD5Format: *md5Format, Force: *force})
 	if err != nil {
 		fatal(err)
@@ -205,6 +207,9 @@ func fetch(ctx context.Context, m fwdl.Model, what, dir string) (string, error) 
 }
 
 func fatal(err error) {
+	if errors.Is(err, context.Canceled) {
+		err = errors.New("cancelled; nothing was written")
+	}
 	fmt.Fprintln(os.Stderr, "rcplug-cfw: "+err.Error())
 	os.Exit(1)
 }

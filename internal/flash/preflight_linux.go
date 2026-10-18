@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"syscall"
 )
@@ -57,6 +58,9 @@ func mountCheck(noPrompt bool) Check {
 	return fail("mount", errors.New("udisksctl is not installed and sudo needs a password, which cannot be typed here: install udisks2 (udisksctl), or use rcplug-flash in a terminal"))
 }
 
+// pyVersion is what pythonCheck's one-liner prints.
+var pyVersion = regexp.MustCompile(`^3\.[0-9]+\.[0-9]+$`)
+
 // pythonCheck checks the interpreter is Python 3.8 or newer, which the
 // flash scripts need.
 func pythonCheck(py string) Check {
@@ -64,8 +68,11 @@ func pythonCheck(py string) Check {
 		"import sys; print('%d.%d.%d' % sys.version_info[:3]); sys.exit(sys.version_info < (3, 8))").Output()
 	v := strings.TrimSpace(string(out))
 	switch {
-	case err == nil:
+	case err == nil && pyVersion.MatchString(v):
 		return pass("python", py+" (Python "+v+")")
+	case err == nil:
+		// Exit 0 without a version: not Python at all (e.g. /bin/true).
+		return fail("python", fmt.Errorf("%s does not run as Python 3 (it printed no version)", py))
 	case v != "":
 		return fail("python", fmt.Errorf("%s is Python %s; the flash scripts need 3.8 or newer", py, v))
 	default:

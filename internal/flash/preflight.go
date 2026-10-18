@@ -159,11 +159,18 @@ func (r *Report) checkArchive(dir string) {
 		return
 	}
 	if in.Keys == 0 {
-		r.add(Check{ID: "image", OK: true, Warn: true,
-			Detail: in.Describe() + ", no SSH key in it: flashing it gives no SSH access (fine to go back to stock)"})
+		detail := in.Describe() + ", no SSH key of yours in it: flashing it gives you no SSH access (fine to go back to stock)"
+		if in.VendorKeys > 0 {
+			detail += fmt.Sprintf("; it has %d of RØDE's own keys, as stock 1.7.3 does", in.VendorKeys)
+		}
+		r.add(Check{ID: "image", OK: true, Warn: true, Detail: detail})
 		return
 	}
-	r.add(pass("image", fmt.Sprintf("%s, %d SSH key(s)", in.Describe(), in.Keys)))
+	detail := fmt.Sprintf("%s, %d SSH key(s)", in.Describe(), in.Keys)
+	if in.VendorKeys > 0 {
+		detail += fmt.Sprintf(" (and %d of RØDE's own)", in.VendorKeys)
+	}
+	r.add(pass("image", detail))
 }
 
 // Prepare runs Preflight and returns the plan for a run, or the first problem

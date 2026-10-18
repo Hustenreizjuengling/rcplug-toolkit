@@ -51,8 +51,8 @@ test-windows: ## flash and setup tests as Windows binaries under Wine (needs win
 	GOOS=windows GOARCH=amd64 $(GO) test -exec wine ./internal/flash ./cmd/rcplug-setup
 
 installer-test: build ## install, update, add a plugin and uninstall in a local sandbox (needs $(RCPLUG))
-	$(MAKE) -C $(RCPLUG) package-host
-	RCPLUG_REPO=$(RCPLUG) tools/installer-test.sh $(RCPLUG)/dist/payload-host $(DIST)/$(HOSTOS)-$(HOSTARCH)/rcplug-setup
+	$(MAKE) -C $(RCPLUG) DIST=$(abspath $(DIST))/rcplug package-host
+	RCPLUG_REPO=$(RCPLUG) tools/installer-test.sh $(abspath $(DIST))/rcplug/payload-host $(DIST)/$(HOSTOS)-$(HOSTARCH)/rcplug-setup
 
 build: ## build the tools for this machine into dist/<os>-<arch>/
 	@mkdir -p $(DIST)/$(HOSTOS)-$(HOSTARCH)

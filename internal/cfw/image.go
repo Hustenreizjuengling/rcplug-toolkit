@@ -3,8 +3,11 @@ package cfw
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -29,7 +32,7 @@ type imageScan struct {
 
 // scanImage reads the whole archive once, recording names, /etc/passwd, the
 // newest modification time and the image's model markers, and hashes the file.
-func scanImage(file string) (*imageScan, error) {
+func scanImage(ctx context.Context, file string) (*imageScan, error) {
 	s := &imageScan{members: map[string]bool{}}
 	f, err := os.Open(file)
 	if err != nil {
@@ -37,7 +40,7 @@ func scanImage(file string) (*imageScan, error) {
 	}
 	defer f.Close()
 	h := md5.New()
-	raw := io.TeeReader(f, h)
+	raw := io.TeeReader(fwimage.ContextReader(ctx, f), h)
 	var markers fwimage.Scanner
 	dot, plain := 0, 0
 	err = eachEntryFrom(raw, func(hdr *tar.Header, r io.Reader) error {
@@ -63,6 +66,9 @@ func scanImage(file string) (*imageScan, error) {
 		}
 		return nil
 	})
+	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, tar.ErrHeader) {
+		return nil, fmt.Errorf("%s is truncated or not a firmware image (%v)", file, err)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -110,13 +116,13 @@ func rootHomeFromPasswd(body []byte) string {
 
 // eachEntry calls fn for every tar entry of a gzipped archive. The reader is
 // valid only during the call.
-func eachEntry(file string, fn func(hdr *tar.Header, r io.Reader) error) error {
+func eachEntry(ctx context.Context, file string, fn func(hdr *tar.Header, r io.Reader) error) error {
 	f, err := os.Open(file)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	return eachEntryFrom(f, fn)
+	return eachEntryFrom(fwimage.ContextReader(ctx, f), fn)
 }
 
 func eachEntryFrom(f io.Reader, fn func(hdr *tar.Header, r io.Reader) error) error {

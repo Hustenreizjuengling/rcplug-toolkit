@@ -75,6 +75,37 @@ device-side script) and everything added since.
   same for Windows without an .exe. All setup tools share the device script
   `rcplug-remote.sh`; the release has a Windows zip with everything in it.
 
+### Fixed
+Found by end-to-end tests of every tool and option (nothing was flashed):
+- `rcplug-setup.cmd` stopped at start with a syntax error (a ")" in a message ended
+  a block), could not use a key file and talked about passwords the Duo does not
+  accept. It now asks for the key file (default `~/.ssh/rodecaster`), uses no
+  parenthesised blocks around texts, and its menu 5 adds this computer's key.
+- `rcplug-flash out/ --flash`, as the docs write it, printed the usage: flags after
+  the folder are parsed now.
+- Stock firmware 1.7.3 carries two of RØDE's own keys in root's `authorized_keys`;
+  the image checks counted them as yours. They are recognised now ("no SSH key of
+  yours (and 2 of RØDE's own)") and left in place.
+- `rcplug-setup` on the command line exits with status 1 when the connection, the
+  key or the command fails, and removes its SSH control folder in every case; the
+  window ends cleanly on Ctrl+C (not during a flash). The status is printed once.
+- `keys` (and menu 5 of the batch file) adds a key only once (`rcplug-remote.sh
+  addkey`).
+- The setup window fills in `--host`, `--user`, `--key` and `--payload`, expands `~`
+  in paths, keeps the connection when the page is reloaded, shows the server's
+  messages in the page's language, answers only `localhost` and loopback addresses,
+  opens the enable-ssh guide, and hides an old progress bar after an error.
+- `rcplug-cfw` stops at once on Ctrl+C (also while building and checking an image),
+  refuses an output that would replace its input image, explains a truncated image,
+  and `--enable-password-auth` works with `--in` without a key.
+- `rcplug-flash --python` refuses a program that does not report a Python version.
+- The wizard packs plugin folders and payload folders owned by root, saves raw logs
+  under a `.tar.gz` name also with `--out`, and says so when the address prompt gets
+  no input.
+- `tools/mkzip` writes `.cmd` and `.txt` files with CRLF line endings, refuses
+  folders and duplicate names, and leaves no half-written zip behind.
+- `make installer-test` builds rcplug's device tree into its own `dist/`.
+
 ### Changed
 - rcplug installs to `/usr/local/rcplug`. The candidate "persistent partitions"
   (`/data`, `/userdata`, …) do not exist on the Duo, which keeps nothing outside its

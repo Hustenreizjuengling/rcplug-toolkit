@@ -153,7 +153,7 @@
     <div class="row">
       <button class="primary" id="btnInstall" data-t="install"></button>
       <span class="spacer"></span>
-      <input type="text" id="pluginDir" placeholder="…/my-plugin" style="flex:1;min-width:140px">
+      <input type="text" id="pluginDir" placeholder="…/my-plugin" aria-label="plugin folder" style="flex:1;min-width:140px">
       <button class="small" data-browse="pluginDir" data-mode="dir" data-t="browse"></button>
       <button class="small" id="btnPlugin" data-t="addPlugin"></button>
     </div>
@@ -272,7 +272,8 @@ let connected = false;
 async function api(path, body) {
   const r = await fetch('api/' + path, {
     method: body === undefined ? 'GET' : 'POST',
-    headers: { 'X-Setup-Token': TOKEN, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+    // The server's messages follow the page's language.
+    headers: { 'X-Setup-Token': TOKEN, 'X-Setup-Lang': lang, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const d = await r.json().catch(() => ({}));
@@ -290,7 +291,7 @@ function applyText() {
   $('#lang').textContent = t('langName');
   $('#quit').textContent = t('quit');
   const g = document.getElementById('guideLink');
-  if (g) g.addEventListener('click', (e) => { e.preventDefault(); showLog('#cfwLog', 'docs/enable-ssh.md'); });
+  if (g) { g.href = 'https://github.com/Hustenreizjuengling/rcplug-toolkit/blob/main/docs/enable-ssh.md'; g.target = '_blank'; g.rel = 'noopener'; }
 }
 
 function showLog(sel, text, cls) {
@@ -306,6 +307,8 @@ function setConnected(on, report) {
   $('#statusText').textContent = on ? t('connected') : t('notConnected');
   $('#cardInstall').classList.toggle('off', !on);
   $('#cardMore').classList.toggle('off', !on);
+  // "Connect to the device first" from before is outdated now.
+  if (on) document.querySelectorAll('.log').forEach((el) => { if (el.textContent === t('needConnectFirst')) el.hidden = true; });
 }
 
 async function withButton(btn, logSel, fn) {
@@ -481,11 +484,13 @@ $('#btnFw').addEventListener('click', async () => {
         $('#fwBar').firstElementChild.style.width = '100%';
       } else {
         showLog('#fwLog', p.failure === 'cancelled' ? t('fwCancelled') : '✗ ' + p.failure, 'err');
+        $('#fwBar').hidden = true; $('#fwBarText').hidden = true; // no half-full bar under an error
       }
       break;
     }
   } catch (e) {
     showLog('#fwLog', '✗ ' + e.message, 'err');
+    $('#fwBar').hidden = true; $('#fwBarText').hidden = true;
   } finally {
     btn.disabled = false; $('#btnFwCancel').hidden = true;
   }
@@ -622,6 +627,15 @@ $('#pkCancel').addEventListener('click', () => $('#picker').close());
   try {
     const env = await api('env');
     if (env.defaultPayload) $('#payload').value = env.defaultPayload;
+    // From the command line (--host, --user, --key, --payload).
+    if (env.host) $('#host').value = env.host;
+    if (env.user) $('#user').value = env.user;
+    if (env.key) $('#connKey').value = env.key;
+    if (env.connected) { // the page was reloaded; the connection is still there
+      setConnected(true);
+      showLog('#connLog', t('connected') + ': ' + env.connected.target, 'ok');
+      connectedDevice = env.connected.device || null;
+    }
     if (env.home) { $('#cfwOut').value = (env.cwd || env.home); $('#diagDir').value = (env.cwd || env.home); $('#fwDir').value = (env.cwd || env.home); $('#flashDir').value = (env.cwd || env.home); }
     if (env.flash === false) { $('#flashOS').hidden = false; $('#flashOS').textContent = t('flashUnsupported'); }
   } catch (e) {}

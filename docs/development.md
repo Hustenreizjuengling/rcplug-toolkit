@@ -43,7 +43,11 @@ docs/                documentation
   against a simulated device and system on every platform; the Windows API layer has
   its own tests, which CI runs on a Windows runner and `make test-windows` under Wine.
 - **Installer test** (`tools/installer-test.sh`): a fake `ssh` runs the remote commands
-  locally in a sandbox.
+  locally in a sandbox. `make installer-test` builds rcplug's device tree into
+  `dist/rcplug/` (rcplug's own `dist/` stays untouched); the sandbox's dashboard uses
+  port 18580 (`RCPLUG_TEST_PORT`).
+- **Windows binaries under Wine** (`make test-windows`): a fresh Wine prefix needs
+  about 750 MB.
 
 ## Conventions
 

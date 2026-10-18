@@ -8,10 +8,13 @@ English
      diagnostics). Before flashing: connect the Duo by USB and close the
      RODECaster App. rcplug-flash.exe does the flashing from a command prompt.
      If you do not want to run an .exe: double-click rcplug-setup.cmd instead.
-     It does the same from a text menu, using only the ssh and tar commands
-     built into Windows 10/11 (but it cannot flash).
+     It installs, updates and removes rcplug, adds plugins and fetches
+     diagnostics from a text menu, using only the ssh and tar commands built
+     into Windows 10/11, and asks for your SSH key file. It cannot prepare or
+     flash firmware.
   3. Open http://<device-ip>:8080/ in your browser.
-  Needs: root access over SSH to the RØDECaster, and the "OpenSSH Client"
+  Needs: root access over SSH to the RØDECaster (your key in its firmware,
+  see step 2), and the "OpenSSH Client"
   (Settings > Apps > Optional features), which Windows 10/11 usually include.
 
 Deutsch
@@ -21,11 +24,13 @@ Deutsch
      per USB flashen, Diagnose). Vor dem Flashen: den Duo per USB anschließen
      und die RODECaster App schließen. rcplug-flash.exe flasht von der
      Eingabeaufforderung aus. Wer keine .exe ausführen möchte: stattdessen
-     rcplug-setup.cmd doppelklicken. Das macht dasselbe über ein Textmenü und
-     nutzt nur die Befehle ssh und tar, die Windows 10/11 mitbringen (flashen
-     kann es nicht).
+     rcplug-setup.cmd doppelklicken. Es installiert, aktualisiert und entfernt
+     rcplug, fügt Plugins hinzu und holt die Diagnose über ein Textmenü, nutzt
+     nur die Befehle ssh und tar, die Windows 10/11 mitbringen, und fragt nach
+     deiner SSH-Schlüsseldatei. Firmware vorbereiten oder flashen kann es nicht.
   3. Im Browser http://<geräte-ip>:8080/ öffnen.
-  Voraussetzung: root-Zugang per SSH zum RØDECaster und der "OpenSSH-Client"
+  Voraussetzung: root-Zugang per SSH zum RØDECaster (dein Schlüssel in seiner
+  Firmware, siehe Schritt 2) und der "OpenSSH-Client"
   (Einstellungen > Apps > Optionale Features), den Windows 10/11 meist schon hat.
 
 Check the files / Dateien prüfen:  certutil -hashfile <file> SHA256  (compare with SHA256SUMS)

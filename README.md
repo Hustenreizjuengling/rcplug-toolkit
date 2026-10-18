@@ -64,8 +64,9 @@ rcplug-flash out/ --flash                                            # flash it 
 ./rcplug-wizard.sh --host 192.168.1.50 --uninstall                   # remove rcplug
 ```
 
-On Windows without the .exe, `rcplug-setup.cmd` offers install, update, diagnostics and
-uninstall from a text menu with Windows' own `ssh` and `tar` (it cannot flash).
+On Windows without the .exe, `rcplug-setup.cmd` offers install, update, plugins,
+diagnostics, adding a key and uninstall from a text menu with Windows' own `ssh` and
+`tar`; it asks for your SSH key file (it cannot prepare or flash firmware).
 
 ## What the tools change
 

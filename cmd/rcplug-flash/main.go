@@ -48,7 +48,7 @@ func main() {
 	printUdev := flag.Bool("print-udev-rule", false, "print the udev rule for non-root HID access and exit")
 	showVer := flag.Bool("version", false, "print version and exit")
 	flag.Usage = usage
-	flag.Parse()
+	args := parseFlags(flag.CommandLine, os.Args[1:])
 
 	if *showVer {
 		fmt.Println(version)
@@ -65,7 +65,6 @@ func main() {
 		return
 	}
 
-	args := flag.Args()
 	if len(args) != 1 {
 		usage()
 		os.Exit(2)
@@ -129,7 +128,7 @@ func printPlan(p *flash.Plan, doFlash bool) {
 	st := p.Staging
 	fmt.Printf("archive:  %s (%d MB, md5 %s, matches %s)\n",
 		st.Archive, st.Size>>20, st.Digest, filepath.Base(st.MD5Path))
-	fmt.Printf("image:    %s, %d SSH key(s)\n", p.Image.Describe(), p.Image.Keys)
+	fmt.Printf("image:    %s, %s\n", p.Image.Describe(), p.Image.KeysText())
 	if p.Device.Node == "" {
 		fmt.Printf("device:   %s (from --node)\n", p.Node)
 	} else {
@@ -181,4 +180,23 @@ func progName() string { return filepath.Base(os.Args[0]) }
 func fatal(err error) {
 	fmt.Fprintln(os.Stderr, "rcplug-flash: "+err.Error())
 	os.Exit(1)
+}
+
+// parseFlags parses flags before and after the archive folder, so that both
+// "rcplug-flash --flash out/" and "rcplug-flash out/ --flash" work (Go's flag
+// package stops at the first argument that is not a flag). It returns the
+// other arguments.
+func parseFlags(fs *flag.FlagSet, args []string) []string {
+	var rest []string
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil // ContinueOnError in tests; ExitOnError has exited
+		}
+		args = fs.Args()
+		if len(args) == 0 {
+			return rest
+		}
+		rest = append(rest, args[0])
+		args = args[1:]
+	}
 }

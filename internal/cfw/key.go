@@ -18,11 +18,11 @@ func ValidatePublicKey(s string) error {
 	if s == "" {
 		return errors.New("empty")
 	}
-	if strings.ContainsAny(s, "\r\n") {
-		return errors.New("more than one line (is this a private key or a list?)")
-	}
 	if strings.Contains(s, "PRIVATE KEY") {
 		return errors.New("this is a private key; use the .pub file")
+	}
+	if strings.ContainsAny(s, "\r\n") {
+		return errors.New("more than one line; give one public key per file")
 	}
 	fields := strings.Fields(s)
 	if len(fields) < 2 {

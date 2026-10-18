@@ -71,7 +71,7 @@ func (s *syncBuffer) Reset() {
 // handleFlashCheck runs the pre-flight checks for a staging folder. It only
 // reads files and device information; nothing is sent to the device.
 func (g *gui) handleFlashCheck(w http.ResponseWriter, r *http.Request) {
-	rep := preflight(flash.Options{StageDir: r.URL.Query().Get("dir"), NoPrompt: true})
+	rep := preflight(flash.Options{StageDir: expandHome(r.URL.Query().Get("dir")), NoPrompt: true})
 	resp := map[string]interface{}{"supported": flash.Supported() == nil, "ready": rep.Err() == nil, "report": rep}
 	for _, c := range rep.Checks {
 		if c.ID == "access" && !c.OK && runtime.GOOS == "linux" {

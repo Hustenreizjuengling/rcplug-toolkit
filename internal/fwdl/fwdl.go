@@ -108,6 +108,9 @@ func normalizeURL(raw string) (string, error) {
 		return "", err
 	}
 	if !allowedURL(u) {
+		if u.Scheme != "https" {
+			return "", fmt.Errorf("refusing to download from %s (not HTTPS)", u.Redacted())
+		}
 		return "", fmt.Errorf("refusing to download from %s (not a RØDE update host)", u.Host)
 	}
 	return u.String(), nil
@@ -202,10 +205,13 @@ func channelRelease(m Model, man map[string]json.RawMessage, keys []string) (Rel
 		if err != nil {
 			return Release{}, err
 		}
-		osURL, err1 := normalizeURL(e.OSURL)
-		md5URL, err2 := normalizeURL(e.OSMD5)
-		if err1 != nil || err2 != nil {
-			return Release{}, fmt.Errorf("the firmware list's %s points elsewhere: %v %v", key, err1, err2)
+		osURL, err := normalizeURL(e.OSURL)
+		if err != nil {
+			return Release{}, fmt.Errorf("the firmware list's %s: %w", key, err)
+		}
+		md5URL, err := normalizeURL(e.OSMD5)
+		if err != nil {
+			return Release{}, fmt.Errorf("the firmware list's %s checksum: %w", key, err)
 		}
 		if urlPath(osURL) != urlPath(want.URL) || urlPath(md5URL) != urlPath(want.MD5URL) {
 			return Release{}, fmt.Errorf("the firmware list's %s points at %s, not at the %s's release %s", key, osURL, m.Name, e.OSVersion)

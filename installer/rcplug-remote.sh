@@ -20,6 +20,8 @@
 #   diagnostics             write the diagnostics zip to stdout; if rcplugd
 #                           cannot build it, a tar.gz of the raw logs instead
 #   uninstall               stop rcplug and remove it with all plugin data
+#   addkey <public key>     add an SSH public key to the user's authorized_keys
+#                           unless it is there already
 #
 # Exit status: 0 ok, 3 rcplug is not installed, other values on errors.
 set -u
@@ -156,8 +158,26 @@ case "$cmd" in
     echo "rcplug uninstalled"
     ;;
 
+  addkey)
+    # The key arrives as words (ssh joins the arguments with spaces).
+    k="$*"
+    case "$k" in
+      ssh-*" "*|ecdsa-*" "*|sk-*" "*) ;;
+      *) fail "that is not an SSH public key" ;;
+    esac
+    blob="$(printf '%s\n' "$k" | cut -d' ' -f2)"
+    umask 077
+    mkdir -p "$HOME/.ssh" || fail "cannot create $HOME/.ssh"
+    if [ -f "$HOME/.ssh/authorized_keys" ] && grep -qF -- "$blob" "$HOME/.ssh/authorized_keys"; then
+      echo "the key is already on the device"
+    else
+      printf '%s\n' "$k" >> "$HOME/.ssh/authorized_keys" || fail "cannot write $HOME/.ssh/authorized_keys"
+      echo "key added"
+    fi
+    ;;
+
   *)
-    echo "usage: sh -s -- {device|find|check|install <tgz> [args]|plugin <name> <tgz>|diagnostics|uninstall}" >&2
+    echo "usage: sh -s -- {device|find|check|install <tgz> [args]|plugin <name> <tgz>|diagnostics|uninstall|addkey <key>}" >&2
     exit 2
     ;;
 esac

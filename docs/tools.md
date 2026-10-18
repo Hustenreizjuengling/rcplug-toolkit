@@ -17,8 +17,12 @@ computer; none of them changes anything on the device before you confirm.
 rcplug-setup [options] [gui | menu | install | diagnostics | plugin DIR | uninstall | keys | status]
 ```
 
-Without a command it opens the setup window in your browser; `menu` (or `--no-gui`)
-uses the text menu instead.
+Without a command it opens the setup window in your browser, with the fields filled in
+from `--host`, `--user`, `--key` and `--payload`; `menu` (or `--no-gui`) uses the text
+menu instead. Paths may start with `~`. On the command line it exits with status 1 when
+something fails (connection, key, command) and 2 without an address. `keys` adds this
+computer's SSH key (created if needed) to the device once; running it again changes
+nothing.
 
 | Option | Meaning |
 |---|---|
@@ -87,9 +91,10 @@ rcplug-flash <dir> --flash     stage, then flash and reboot (asks first)
 | `--dir D` | install directory on the device (default: the existing installation, else `/usr/local/rcplug`) |
 | `--payload P` | device tree or `rcplug-*-aarch64.tar.gz` to install (default: the newest tarball next to the wizard) |
 | `--plugin DIR` | install or update one plugin directory into an existing installation (repeatable) |
-| `--diagnostics` | download a diagnostics bundle to the current folder, or to `--out FILE`; works even when the web interface does not respond |
+| `--diagnostics` | download a diagnostics bundle to the current folder; works even when the web interface does not respond (then it saves the raw logs as `.tar.gz`) |
+| `--out FILE` | where `--diagnostics` saves the bundle |
 | `--uninstall` | stop rcplug and remove it, including plugin data |
-| `--yes` | do not ask for confirmation |
+| `--yes`, `-y` | do not ask for confirmation |
 | `--dry-run` | only check the connection and show what would happen |
 
 The SSH host key is remembered on first use and checked afterwards. A firmware update

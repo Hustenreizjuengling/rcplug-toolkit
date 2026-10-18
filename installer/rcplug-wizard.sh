@@ -82,7 +82,7 @@ REMOTE_SH="$HERE/rcplug-remote.sh"
 [ -f "$REMOTE_SH" ] || die "rcplug-remote.sh is missing next to the wizard" 5
 if [ -z "$HOST" ]; then
   printf "RØDECaster IP or hostname: "
-  read -r HOST
+  read -r HOST || die "no host given" 2
 fi
 [ -n "$HOST" ] || die "no host given" 2
 
@@ -118,6 +118,16 @@ remote() {
 device() { remote sh -s -- "$@" < "$REMOTE_SH"; }
 # upload copies stdin to a file on the device.
 upload() { remote "cat > $(sq "$1")"; }
+
+# pack writes a gzipped tar of a folder to stdout, owned by root as on the
+# device (the device's tar, run as root, restores the owners it finds).
+pack() {
+  if tar --version 2>/dev/null | grep -q GNU; then
+    tar --owner=0 --group=0 --numeric-owner -C "$1" -czf - .
+  else
+    tar --uid 0 --gid 0 -C "$1" -czf - . # bsdtar (macOS)
+  fi
+}
 
 confirm() {
   [ $YES = 1 ] && return 0
@@ -167,13 +177,15 @@ if [ $DIAG = 1 ]; then
     rm -f "$out"
     die "could not collect diagnostics from $HOST (is rcplug installed?)" 6
   fi
-  if [ "$(head -c 2 "$out")" != "PK" ] && [ -z "$OUT" ]; then
-    mv "$out" "${out%.zip}.tar.gz"
-    out="${out%.zip}.tar.gz"
-    echo "   rcplugd could not build the bundle; these are the raw logs"
+  if [ "$(head -c 2 "$out")" != "PK" ]; then
+    # Raw logs come as tar.gz; do not leave them under a .zip name.
+    case "$out" in
+      *.zip) mv "$out" "${out%.zip}.tar.gz"; out="${out%.zip}.tar.gz";;
+    esac
+    echo "   rcplugd could not build the bundle; these are the raw logs (tar.gz)"
   fi
   echo "Saved $out"
-  echo "Passwords and keys are masked; review the bundle before sharing it publicly."
+  echo "Passwords, keys and the values of settings are masked; review the bundle before sharing it publicly."
   exit 0
 fi
 
@@ -208,7 +220,7 @@ if [ ${#PLUGINS[@]} -gt 0 ]; then
   for p in "${PLUGINS[@]}"; do
     name="$(basename "$(cd "$p" && pwd)")"
     echo "-- $name"
-    tar -C "$p" -czf - . | upload "/tmp/rcplug-plugin-$name.tgz"
+    pack "$p" | upload "/tmp/rcplug-plugin-$name.tgz"
     device plugin "$name" "/tmp/rcplug-plugin-$name.tgz"
   done
   echo "Done. Open http://$HOST:${ADDR##*:}/#/plugins"
@@ -247,7 +259,7 @@ echo "-- transferring and installing"
 if [ -n "$TGZ" ]; then
   upload /tmp/rcplug-payload.tgz < "$TGZ"
 else
-  tar -C "$PAYLOAD" -czf - . | upload /tmp/rcplug-payload.tgz
+  pack "$PAYLOAD" | upload /tmp/rcplug-payload.tgz
 fi
 device install /tmp/rcplug-payload.tgz ${install_args[@]+"${install_args[@]}"}
 

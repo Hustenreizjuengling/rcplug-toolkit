@@ -281,3 +281,20 @@ func TestValidPubKey(t *testing.T) {
 		}
 	}
 }
+
+// Building into the folder of the input must not replace the stock image.
+func TestRefusesToReplaceTheInput(t *testing.T) {
+	out := t.TempDir()
+	if _, err := build(buildImage(t), out, []string{testKey}, false, false); err != nil {
+		t.Fatal(err)
+	}
+	staged := filepath.Join(out, StagedName)
+	before, _ := os.ReadFile(staged)
+	_, err := build(staged, out, []string{testKey}, false, false)
+	if err == nil || !strings.Contains(err.Error(), "would replace the input") {
+		t.Fatalf("err = %v", err)
+	}
+	if after, _ := os.ReadFile(staged); string(after) != string(before) {
+		t.Fatal("the input changed")
+	}
+}

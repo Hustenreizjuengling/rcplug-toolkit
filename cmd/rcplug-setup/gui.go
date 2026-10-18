@@ -13,11 +13,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/cfw"
@@ -34,6 +36,7 @@ var webFS embed.FS
 type gui struct {
 	version string
 	token   string
+	def     guiDefaults
 
 	mu   sync.Mutex
 	sess *session // set by /api/connect
@@ -56,21 +59,26 @@ type download struct {
 	cancel      context.CancelFunc
 }
 
-func runGUI(version string) error {
+// guiDefaults are values from the command line that the page starts with.
+type guiDefaults struct {
+	Host, User, Key, Payload string
+}
+
+func runGUI(version string, def guiDefaults) error {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return err
 	}
 	tok := make([]byte, 16)
 	_, _ = rand.Read(tok)
-	g := &gui{version: version, token: hex.EncodeToString(tok), quit: make(chan struct{})}
+	g := &gui{version: version, token: hex.EncodeToString(tok), quit: make(chan struct{}), def: def}
 	g.idle = time.AfterFunc(2*time.Hour, g.idleQuit)
 	fwdl.UserAgent = "rcplug-setup/" + version
 
 	srv := &http.Server{Handler: g.routes()}
 	go func() { _ = srv.Serve(ln) }()
 
-	url := fmt.Sprintf("http://%s/?t=%s&lang=%s", ln.Addr(), g.token, lang)
+	url := fmt.Sprintf("http://%s/?t=%s&lang=%s", ln.Addr(), g.token, curLang())
 	fmt.Printf("\n  rcplug setup %s\n\n", g.version)
 	fmt.Println("  " + tr("guiServing"))
 	fmt.Println("    " + url)
@@ -78,6 +86,23 @@ func runGUI(version string) error {
 		fmt.Println("  " + tr("guiOpenManually"))
 	}
 	fmt.Println("  " + tr("guiQuit"))
+
+	// Ctrl+C or a terminating signal end the setup like Quit, so the SSH
+	// connection and its temporary folder are cleaned up; never during a
+	// flash, which must not be cut off.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
+	go func() {
+		for range sig {
+			if g.fl.running() {
+				fmt.Println("  " + tr("guiFlashBusy"))
+				continue
+			}
+			g.stop()
+			return
+		}
+	}()
 
 	<-g.quit
 	time.Sleep(200 * time.Millisecond) // let the quit response flush
@@ -159,12 +184,16 @@ func (g *gui) guard(h http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		if host, _, err := net.SplitHostPort(r.Host); err == nil {
-			if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() && host != "localhost" {
-				http.Error(w, "forbidden", http.StatusForbidden)
-				return
-			}
+		host := r.Host
+		if h, _, err := net.SplitHostPort(r.Host); err == nil {
+			host = h
 		}
+		host = strings.Trim(host, "[]")
+		if ip := net.ParseIP(host); host != "localhost" && (ip == nil || !ip.IsLoopback()) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		useLang(r.Header.Get("X-Setup-Lang")) // messages follow the page's language
 		g.idle.Reset(2 * time.Hour)
 		w.Header().Set("Cache-Control", "no-store")
 		h(w, r)
@@ -200,7 +229,27 @@ func decodeReq(r *http.Request) (req, error) {
 		return in, nil
 	}
 	err := json.NewDecoder(r.Body).Decode(&in)
+	for _, p := range []*string{&in.Key, &in.Input, &in.Out, &in.Dir, &in.Payload} {
+		*p = expandHome(*p)
+	}
+	for i := range in.KeyPaths {
+		in.KeyPaths[i] = expandHome(in.KeyPaths[i])
+	}
 	return in, err
+}
+
+// expandHome turns a leading ~ into the home directory, as a shell would;
+// the page's placeholders suggest paths like ~/.ssh/rodecaster.pub.
+func expandHome(p string) string {
+	p = strings.TrimSpace(p)
+	if p != "~" && !strings.HasPrefix(p, "~/") && !strings.HasPrefix(p, `~\`) {
+		return p
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return p
+	}
+	return filepath.Join(home, p[1:])
 }
 
 func writeJSON(w http.ResponseWriter, v interface{}) {
@@ -211,11 +260,24 @@ func writeJSON(w http.ResponseWriter, v interface{}) {
 func (g *gui) handleEnv(w http.ResponseWriter, r *http.Request) {
 	home, _ := os.UserHomeDir()
 	cwd, _ := os.Getwd()
-	writeJSON(w, map[string]interface{}{
-		"version": g.version, "os": runtime.GOOS, "lang": lang,
-		"home": home, "cwd": cwd, "defaultPayload": newestPayload(),
+	payload := g.def.Payload
+	if payload == "" {
+		payload = newestPayload()
+	}
+	env := map[string]interface{}{
+		"version": g.version, "os": runtime.GOOS, "lang": curLang(),
+		"home": home, "cwd": cwd, "defaultPayload": payload,
 		"flash": flash.Supported() == nil,
-	})
+		"host":  g.def.Host, "user": g.def.User, "key": g.def.Key,
+	}
+	// After a reload of the page (the language switch reloads it) the
+	// connection made before is still there.
+	g.mu.Lock()
+	if s := g.sess; s != nil {
+		env["connected"] = map[string]interface{}{"target": s.target, "device": s.deviceInfo()}
+	}
+	g.mu.Unlock()
+	writeJSON(w, env)
 }
 
 // sessionOp wraps an operation that needs a connected session, capturing its
@@ -359,7 +421,7 @@ func (g *gui) handleInspect(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
-	in, err := fwimage.Inspect(r.URL.Query().Get("path"))
+	in, err := fwimage.Inspect(expandHome(r.URL.Query().Get("path")))
 	if err != nil {
 		writeJSON(w, map[string]string{"error": err.Error()})
 		return
@@ -520,7 +582,7 @@ func (g *gui) handlePushKey(w http.ResponseWriter, r *http.Request) {
 
 // handleBrowse lists a directory so the web UI can pick local files and folders.
 func (g *gui) handleBrowse(w http.ResponseWriter, r *http.Request) {
-	p := r.URL.Query().Get("path")
+	p := expandHome(r.URL.Query().Get("path"))
 	if p == "" {
 		p, _ = os.UserHomeDir()
 	}

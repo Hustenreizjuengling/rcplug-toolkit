@@ -67,9 +67,10 @@ rcplug-flash out/ --flash                                            # flashen (
 ./rcplug-wizard.sh --host 192.168.1.50 --uninstall                   # rcplug entfernen
 ```
 
-Unter Windows ohne .exe bietet `rcplug-setup.cmd` Installieren, Aktualisieren, Diagnose
-und Deinstallieren über ein Textmenü mit Windows' eigenem `ssh` und `tar` (flashen kann
-es nicht).
+Unter Windows ohne .exe bietet `rcplug-setup.cmd` Installieren, Aktualisieren, Plugins,
+Diagnose, Schlüssel hinterlegen und Deinstallieren über ein Textmenü mit Windows' eigenem
+`ssh` und `tar`; es fragt nach deiner SSH-Schlüsseldatei (Firmware vorbereiten und
+flashen kann es nicht).
 
 ## Was die Werkzeuge verändern
 

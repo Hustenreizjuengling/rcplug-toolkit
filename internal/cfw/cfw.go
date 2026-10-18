@@ -13,6 +13,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -42,6 +43,8 @@ type Options struct {
 	EnablePasswordAuth bool     // also allow password logins (edits sshd_config)
 	MD5Format          string   // archive.md5 content; {hash}/{name} expand ("" = "{hash}")
 	Force              bool     // proceed with an image that has no /etc/passwd or names no known model
+	// Context stops the build when it ends (Ctrl+C); nil means never.
+	Context context.Context
 }
 
 // Result reports what a build produced.
@@ -85,7 +88,11 @@ func Build(o Options) (*Result, error) {
 		md5Format = "{hash}"
 	}
 
-	scan, err := scanImage(o.Input)
+	ctx := o.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	scan, err := scanImage(ctx, o.Input)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +105,12 @@ func Build(o Options) (*Result, error) {
 	}
 	if err := scan.info.Check(model, ""); err != nil && !(o.Force && errors.Is(err, fwimage.ErrUnknownModel)) {
 		if errors.Is(err, fwimage.ErrUnknownModel) {
-			return nil, fmt.Errorf("%w (set Force to proceed anyway)", err)
+			return nil, fmt.Errorf("%w (rcplug-cfw --force proceeds anyway)", err)
 		}
 		return nil, err
 	}
 	if scan.passwd == "" && !o.Force {
-		return nil, fmt.Errorf("%s has no etc/passwd; this does not look like a root filesystem (set Force to proceed anyway)", o.Input)
+		return nil, fmt.Errorf("%s has no etc/passwd; this does not look like a root filesystem (rcplug-cfw --force proceeds anyway)", o.Input)
 	}
 	home := scan.rootHome()
 	sshDir := path.Join(home, ".ssh")
@@ -113,6 +120,11 @@ func Build(o Options) (*Result, error) {
 		return nil, err
 	}
 	outPath := filepath.Join(o.OutDir, StagedName)
+	if a, err := os.Stat(o.Input); err == nil {
+		if b, err := os.Stat(outPath); err == nil && os.SameFile(a, b) {
+			return nil, fmt.Errorf("the output %s would replace the input image; choose another output folder", outPath)
+		}
+	}
 	tmp := outPath + ".tmp"
 	f, err := os.Create(tmp)
 	if err != nil {
@@ -128,7 +140,7 @@ func Build(o Options) (*Result, error) {
 	tw := tar.NewWriter(gz)
 
 	res := &Result{RootHome: home, Image: scan.info, InputMD5: inputMD5}
-	err = eachEntry(o.Input, func(hdr *tar.Header, r io.Reader) error {
+	err = eachEntry(ctx, o.Input, func(hdr *tar.Header, r io.Reader) error {
 		name := normalize(hdr.Name)
 		switch {
 		case len(o.PublicKeys) > 0 && name == authKeys && hdr.Typeflag == tar.TypeReg:

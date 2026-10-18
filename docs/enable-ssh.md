@@ -2,8 +2,10 @@
 
 rcplug is installed over SSH, but **the RØDECaster Duo has no SSH access out of
 the box**: current firmware (1.7.x) runs an SSH server, but accepts neither a
-password login nor any key (root's `authorized_keys` in the stock image is
-empty). Getting in means adding your own SSH key to the device's firmware once.
+password login nor any key of yours: root's `authorized_keys` is empty in 1.7.6, and in
+1.7.3 it holds two keys of RØDE's own. Getting in means adding your own SSH key to the
+device's firmware once. rcplug keeps RØDE's keys where they are; its checks count only
+the others as yours.
 
 > **This modifies the device firmware. Read the whole page first.**
 >
@@ -124,7 +126,10 @@ This writes `out/archive.tar.gz` and `out/archive.md5`, the names the device
 expects on its update disk. By default it only adds your public key to root's
 `authorized_keys`; it changes nothing else and needs no root or `fakeroot` (it
 keeps every entry's ownership, mode and order itself). Checked against the stock
-1.7.6 image: all 11,735 entries are identical except `authorized_keys`.
+1.7.6 and 1.7.3 images: all 11,735 (11,723) entries keep their order, type, content,
+mode, owner, modification time and link target; only `authorized_keys` changes. Five
+entries with non-ASCII names lose the access and change times stored in their PAX
+records, which nothing on the device reads.
 
 | Flag | Effect |
 |---|---|

@@ -143,3 +143,18 @@ func TestCountsAuthorizedKeys(t *testing.T) {
 		t.Fatalf("prepared image: Keys = %d, want 2", in.Keys)
 	}
 }
+
+func TestKeyFingerprint(t *testing.T) {
+	// As ssh-keygen -l prints it for this key.
+	line := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL7vY+SWORihUKc4UVEZdJ4UjtRbB+ukyY79uOSbC9Si test"
+	if got := keyFingerprint(line); got != "SHA256:RXs1nqf/WSw8k6h49Cdzfc/3tFeaP7GLiUNfzpPiG+s" {
+		t.Fatalf("fingerprint %q", got)
+	}
+	if keyFingerprint("not a key") != "" {
+		t.Fatal("garbage has a fingerprint")
+	}
+	in := Info{Keys: 0, VendorKeys: 2}
+	if got := in.KeysText(); got != "no SSH key of yours (and 2 of RØDE's own)" {
+		t.Fatalf("KeysText %q", got)
+	}
+}

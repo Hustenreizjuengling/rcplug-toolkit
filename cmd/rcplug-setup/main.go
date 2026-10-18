@@ -38,7 +38,11 @@ import (
 
 var version = "dev"
 
-func main() {
+func main() { os.Exit(run()) }
+
+// run returns the exit status, so that deferred cleanup (the SSH connection
+// and its control folder) happens before the program exits.
+func run() int {
 	host := flag.String("host", "", "IP address or name of the device")
 	user := flag.String("user", "root", "SSH user")
 	key := flag.String("key", "", "SSH private key")
@@ -54,17 +58,17 @@ func main() {
 	flag.Parse()
 	if *showVer {
 		fmt.Println(version)
-		return
+		return 0
 	}
 	setLang(*langFlag)
 	args := flag.Args()
 	// Default to the browser GUI; "menu" or --no-gui use the text menu.
 	if (len(args) == 0 && !*noGUI) || (len(args) == 1 && args[0] == "gui") {
-		if err := runGUI(version); err != nil {
+		if err := runGUI(version, guiDefaults{Host: *host, User: *user, Key: *key, Payload: *payload}); err != nil {
 			fmt.Fprintln(os.Stderr, tr("error")+" "+err.Error())
-			os.Exit(1)
+			return 1
 		}
-		return
+		return 0
 	}
 	if len(args) == 1 && args[0] == "menu" {
 		args = nil
@@ -80,28 +84,30 @@ func main() {
 		*host = ui.ask(tr("host"))
 	}
 	if *host == "" {
-		os.Exit(2)
+		return 2
 	}
 	s, err := newSession(*user, *host, *key)
 	if err != nil {
 		ui.fail(err)
-		return
+		return 1
 	}
 	defer s.close()
 	fmt.Println(tr("checking"))
 	if err := s.probe(); err != nil {
 		ui.fail(err)
-		return
+		return 1
 	}
 	fmt.Println(tr("sshOK"))
-	s.report()
+	if interactive || args[0] != "status" { // status prints it itself
+		s.report()
+	}
 
 	if !interactive {
 		if err := s.dispatch(ui, *payload, args); err != nil {
 			ui.fail(err)
-			os.Exit(1)
+			return 1
 		}
-		return
+		return 0
 	}
 	for {
 		fmt.Println()
@@ -127,7 +133,7 @@ func main() {
 		case "6":
 			args = []string{"status"}
 		case "0", "q", "":
-			return
+			return 0
 		default:
 			continue
 		}
@@ -208,8 +214,12 @@ func (s *session) close() {
 
 // ssh runs a command on the device. Password prompts go to the terminal.
 func (s *session) ssh(stdin io.Reader, stdout io.Writer, remote ...string) error {
+	return s.sshTo(stdin, stdout, os.Stderr, remote...)
+}
+
+func (s *session) sshTo(stdin io.Reader, stdout, stderr io.Writer, remote ...string) error {
 	cmd := exec.Command("ssh", append(append(append([]string{}, s.opts...), s.target), remote...)...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = stdin, stdout, os.Stderr
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = stdin, stdout, stderr
 	return cmd.Run()
 }
 
@@ -291,7 +301,9 @@ func (s *session) report() {
 		fmt.Fprintln(s.out, tr("deviceLine")+" "+d.String())
 	}
 	var out bytes.Buffer
-	_ = s.device(&out, "check")
+	// The device's own "rcplug is not installed" (stderr) is said below in
+	// the user's language.
+	_ = s.sshTo(bytes.NewReader(installer.RemoteScript), &out, io.Discard, "sh", "-s", "--", "check")
 	text := strings.TrimSpace(out.String())
 	if text == "" {
 		fmt.Fprintln(s.out, tr("notInstalled"))
@@ -521,13 +533,14 @@ func (s *session) keys() error {
 		}
 		pub = priv + ".pub"
 	}
-	f, err := os.Open(pub)
+	raw, err := os.ReadFile(pub)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	line, _, _ := strings.Cut(strings.TrimSpace(string(raw)), "\n")
 	fmt.Fprintln(s.out, tr("keySend"))
-	if err := s.ssh(f, s.out, "umask 077; mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"); err != nil {
+	// addkey leaves a key that is already there alone.
+	if err := s.device(s.out, append([]string{"addkey"}, strings.Fields(line)...)...); err != nil {
 		return err
 	}
 	fmt.Fprintln(s.out, tr("keyOK"))
