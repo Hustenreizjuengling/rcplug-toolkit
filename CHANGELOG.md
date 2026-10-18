@@ -4,6 +4,8 @@ All notable changes. The format follows [Keep a Changelog](https://keepachangelo
 versions follow [Semantic Versioning](https://semver.org/) (before 1.0, minor versions
 may break compatibility).
 
+## 0.5.1 - Unreleased
+
 ## 0.5.0 - 2026-10-18
 
 First release as its own repository. The tools come from rcplug 0.4.0 (wizard and
