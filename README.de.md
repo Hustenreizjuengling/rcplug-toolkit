@@ -19,6 +19,19 @@ English: [README.md](README.md)
 > echten Gerät noch nicht ausprobiert.** Firmware zu verändern geschieht auf eigene
 > Gefahr. rcplug hat nichts mit RØDE zu tun und wird von RØDE nicht unterstützt.
 
+## ⚠ Haftungsausschluss: Nutzung auf eigene Gefahr
+
+rcplug, seine Plugins und Werkzeuge sind **inoffizielle, experimentelle Software** und
+werden „wie besehen“ **ohne jede Gewährleistung** bereitgestellt (siehe
+[MIT-Lizenz](LICENSE)). Für den SSH-Zugang wird eine veränderte Firmware auf den
+RØDECaster geflasht. Das Flashen, das Installieren von Software auf dem Gerät und das
+Ändern seiner Einstellungen **kann das Gerät unbrauchbar machen („bricken“)**,
+Einstellungen oder Aufnahmen löschen und **die Garantie erlöschen lassen**. RØDE
+unterstützt so veränderte Geräte nicht. Alles, was du mit diesem Projekt machst,
+geschieht **in deiner eigenen Verantwortung**: Die Autoren haften nicht für Schäden an
+deinem Gerät, deinen Daten oder deinen Produktionen. Nicht während einer Sendung
+einsetzen, die nicht ausfallen darf.
+
 ## Los geht's
 
 1. **Herunterladen** aus den [Releases](../../releases):

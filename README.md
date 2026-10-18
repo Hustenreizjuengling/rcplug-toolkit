@@ -19,6 +19,17 @@ Deutsch: [README.de.md](README.de.md)
 > has not been tried on a real device yet.** Modifying firmware is at your own risk.
 > rcplug is not affiliated with or endorsed by RØDE.
 
+## ⚠ Disclaimer: use at your own risk
+
+rcplug, its plugins and its tools are **unofficial, experimental software**, provided
+"as is" **without any warranty** (see the [MIT license](LICENSE)). Getting SSH onto
+the RØDECaster means flashing a modified firmware. Flashing, installing software on the
+device and changing its settings **can make the device unusable ("brick" it)**, lose
+settings or recordings and **void your warranty**. RØDE does not support devices
+changed this way. Whatever you do with this project, you do **on your own
+responsibility**: the authors accept no liability for damage to your device, your
+data or your productions. Do not use it during a show that must not fail.
+
 ## Getting started
 
 1. **Download** the toolkit for your computer from the [releases](../../releases):
