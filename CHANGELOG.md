@@ -4,7 +4,7 @@ All notable changes. The format follows [Keep a Changelog](https://keepachangelo
 versions follow [Semantic Versioning](https://semver.org/) (before 1.0, minor versions
 may break compatibility).
 
-## 0.7.0 - Unreleased
+## 0.7.0 - 2026-10-19
 
 ### Added
 - **Look at a diagnostics file in the browser:** a [web
