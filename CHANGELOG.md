@@ -18,6 +18,15 @@ may break compatibility).
 - `rcplug-cfw --inspect` names the fingerprints of the SSH keys an image holds, as
   `ssh-keygen -l` shows them.
 
+### Fixed
+- **Adding a plugin no longer cuts the device's USB audio.** The setup program, the
+  wizard and `rcplug-setup.cmd` unpacked a plugin onto the device's storage at full
+  speed; on a real Duo the computer then lost the audio and reset the device. The
+  device side now unpacks it as rcplug's in-app updates do: 256 KB/s, flushed to
+  storage piece by piece, at the lowest priority (a plugin of 2.5 MB takes about ten
+  seconds). rcplug itself is unpacked into the device's memory as before, and its
+  installer copies onto the storage at the lowest I/O priority.
+
 ## 0.7.0 - 2026-10-19
 
 ### Added

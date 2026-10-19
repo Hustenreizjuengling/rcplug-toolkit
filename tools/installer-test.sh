@@ -120,6 +120,18 @@ wizard --plugin "$RCPLUG_REPO/examples/hello-sh" >/dev/null
 for _ in $(seq 1 25); do api /api/plugins | grep -q '"name":"hello-sh"' && break; sleep 0.2; done
 api /api/plugins | grep -q '"name":"hello-sh"' || fail "plugin not picked up by the rescan"
 
+echo "== a bigger plugin arrives whole, unpacked gently"
+big="$SB/src/bigplug"
+mkdir -p "$big"
+cp "$RCPLUG_REPO/examples/hello-sh/run.sh" "$big/run.sh"
+sed 's/"hello-sh"/"bigplug"/' "$RCPLUG_REPO/examples/hello-sh/plugin.json" > "$big/plugin.json"
+head -c 300000 /dev/urandom > "$big/blob.bin" # five pieces of 64 KB, not a multiple
+start=$(date +%s)
+wizard --plugin "$big" >/dev/null
+took=$(( $(date +%s) - start ))
+cmp -s "$big/blob.bin" "$SB/rcplug/plugins/bigplug/blob.bin" || fail "the bigger plugin arrived damaged"
+[ "$took" -ge 1 ] || fail "the plugin was unpacked at full speed (${took}s)"
+
 if [ -n "$SETUP" ]; then
   echo "== rcplug-setup: update, status, plugin, diagnostics"
   "$SETUP" --host sandbox --yes --payload "$SB/release/rcplug-9.9.9-aarch64.tar.gz" install >/dev/null || fail "rcplug-setup install failed"
