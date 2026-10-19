@@ -4,7 +4,16 @@ All notable changes. The format follows [Keep a Changelog](https://keepachangelo
 versions follow [Semantic Versioning](https://semver.org/) (before 1.0, minor versions
 may break compatibility).
 
-## 0.6.1 - Unreleased
+## 0.7.0 - Unreleased
+
+### Added
+- **Look at a diagnostics file in the browser:** a [web
+  page](https://hustenreizjuengling.github.io/rcplug-toolkit/diagnostics.html) opens a
+  diagnostics file of rcplug (or the setup program's fallback with the raw logs) and
+  shows the problems found in the logs, the device's CPU and RAM over the last hours,
+  the plugins, how the console is connected, the last update, every file, and — before
+  you share it — which network addresses, serial numbers or e-mail addresses it still
+  holds and where. The file is read in the page; nothing is uploaded.
 
 ## 0.6.0 - 2026-10-19
 

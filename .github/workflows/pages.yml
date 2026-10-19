@@ -1,14 +1,23 @@
 name: Web pages
 
-# The toolkit in the browser (web/, see tools/sitegen), on GitHub Pages. It is
-# built from the latest release, never from unreleased code: after each
-# release, once a day for RØDE's current firmware list (firmware.json), or by
-# hand (Actions → Web pages → Run workflow).
+# The toolkit in the browser (web/, see tools/sitegen), on GitHub Pages:
+#
+# - the site itself from the latest published release, never from
+#   unreleased code;
+# - /next/ from main, a preview for testing (a banner on every page, not
+#   indexed, no downloads), like the "Development build" pre-release.
+#
+# Built after each release, after pushes to main that change the pages, once
+# a day for RØDE's current firmware list (firmware.json), or by hand
+# (Actions → Web pages → Run workflow).
 
 on:
   workflow_run:
     workflows: [Release]
     types: [completed]
+  push:
+    branches: [main]
+    paths: ['web/**', 'cmd/rcplug-web/**', 'internal/cfw/**', 'internal/fwimage/**', 'internal/fwdl/**', 'tools/sitegen/**', 'go.mod', 'go.sum', '.github/workflows/pages.yml']
   schedule:
     - cron: '23 5 * * *'
   workflow_dispatch:
@@ -28,9 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
           persist-credentials: false
-      - name: Check out the latest release
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - name: The site, from the latest release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -38,13 +51,11 @@ jobs:
           # whose release run failed is never published)
           tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
           case "$tag" in v[0-9]*) ;; *) echo "no release: '$tag'"; exit 1 ;; esac
-          git checkout --quiet "refs/tags/$tag"
-          echo "Building the pages of $tag"
-      - uses: actions/setup-go@v7
-        with:
-          go-version: stable
-      - name: Build
-        run: go run ./tools/sitegen -out _site -require-firmware
+          git worktree add --quiet --detach ../release "refs/tags/$tag"
+          echo "Building the site from $tag"
+          (cd ../release && go run ./tools/sitegen -out "$GITHUB_WORKSPACE/_site" -require-firmware)
+      - name: The preview, from main
+        run: go run ./tools/sitegen -out _site/next -preview -require-firmware
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

@@ -38,7 +38,9 @@ einsetzen, die nicht ausfallen darf.
 [Firmware im Browser vorbereiten](https://hustenreizjuengling.github.io/rcplug-toolkit/firmware.html). Die Seite nutzt den Patcher des
 Toolkits (als WebAssembly) und kann dir einen SSH-Schlüssel erzeugen; RØDEs Firmware und
 dein Schlüssel bleiben auf deinem Rechner. Flashen und rcplug installieren gehen weiterhin
-mit dem Setup-Programm.
+mit dem Setup-Programm. Eine Diagnose-Datei lässt sich ebenfalls [im Browser
+ansehen](https://hustenreizjuengling.github.io/rcplug-toolkit/diagnostics.html), samt
+dem, was du vor dem Teilen prüfen solltest.
 
 1. **Herunterladen** aus den [Releases](../../releases):
    - Windows 10/11: `rcplug-toolkit-<version>-windows.zip`, entpacken.

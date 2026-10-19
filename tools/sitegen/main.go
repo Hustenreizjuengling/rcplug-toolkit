@@ -55,6 +55,7 @@ func main() {
 	version := flag.String("version", "", "the toolkit's version (default: the VERSION file)")
 	firmware := flag.Bool("firmware", true, "read RØDE's current releases for firmware.json")
 	require := flag.Bool("require-firmware", false, "fail when RØDE's list cannot be read")
+	preview := flag.Bool("preview", false, "a preview of unreleased code: a banner on every page, not indexed, no download links")
 	flag.Parse()
 	if *version == "" {
 		b, err := os.ReadFile("VERSION")
@@ -63,7 +64,7 @@ func main() {
 		}
 		*version = strings.TrimSpace(string(b))
 	}
-	if err := build(*out, *web, *version, *firmware, *require); err != nil {
+	if err := build(*out, *web, *version, *firmware, *require, *preview); err != nil {
 		fail(err)
 	}
 }
@@ -73,12 +74,17 @@ func fail(err error) {
 	os.Exit(1)
 }
 
-func build(out, web, version string, firmware, require bool) error {
+func build(out, web, version string, firmware, require, preview bool) error {
 	if err := clearSite(out); err != nil {
 		return err
 	}
 	if err := copyTree(os.DirFS(web), out); err != nil {
 		return fmt.Errorf("the pages: %w", err)
+	}
+	if preview {
+		if err := markPreview(out); err != nil {
+			return err
+		}
 	}
 	if err := copyTree(ui.FS, filepath.Join(out, "ui")); err != nil {
 		return fmt.Errorf("the shared look: %w", err)
@@ -105,7 +111,11 @@ func build(out, web, version string, firmware, require bool) error {
 		}
 		stamp.Write(b)
 	}
-	v, _ := json.Marshal(map[string]string{"version": version, "wasm": hex.EncodeToString(stamp.Sum(nil))[:16]})
+	doc := map[string]interface{}{"version": version, "wasm": hex.EncodeToString(stamp.Sum(nil))[:16]}
+	if preview {
+		doc = map[string]interface{}{"preview": true, "wasm": doc["wasm"]} // nothing released to download
+	}
+	v, _ := json.Marshal(doc)
 	return os.WriteFile(filepath.Join(out, "toolkit.json"), append(v, '\n'), 0o644)
 }
 
@@ -207,4 +217,32 @@ func writeFirmware(file string) error {
 		return err
 	}
 	return os.WriteFile(file, append(b, '\n'), 0o644)
+}
+
+// previewBanner goes on every page of a preview build.
+const previewBanner = `<div class="preview-banner" role="note"><b>Preview</b> · the newest code, not released and not tested on a device yet. ` +
+	`<b>Vorschau</b> · der neueste Code, noch nicht veröffentlicht und noch nicht am Gerät getestet. <a href="../">rcplug in the browser</a></div>`
+
+// markPreview puts the banner on every page and keeps search engines away.
+func markPreview(out string) error {
+	pages, err := filepath.Glob(filepath.Join(out, "*.html"))
+	if err != nil {
+		return err
+	}
+	for _, p := range pages {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		s := string(b)
+		if !strings.Contains(s, "<body>") || !strings.Contains(s, "</head>") {
+			return fmt.Errorf("%s: no <head> or <body> to mark", p)
+		}
+		s = strings.Replace(s, "</head>", "<meta name=\"robots\" content=\"noindex\">\n</head>", 1)
+		s = strings.Replace(s, "<body>", "<body>\n"+previewBanner, 1)
+		if err := os.WriteFile(p, []byte(s), 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
 }

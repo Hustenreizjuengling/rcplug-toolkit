@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Look at a diagnostics file · rcplug</title>
+<meta name="description" content="Open an rcplug diagnostics file in your browser: problems, resources over time, plugins, the console, and what to review before sharing it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2334d399%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22/%3E%3Cpath d=%22M8 15.5v-4M12 15.5V8.5M16 15.5v-6%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="ui/rcplug.css">
+<link rel="stylesheet" href="site.css">
+<script type="module" src="js/diagview.js"></script>
+</head>
+<body>
+<header class="site-top">
+  <a class="brand" href="./"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#logo"/></svg><b>rcplug</b></a>
+  <nav aria-label="rcplug">
+    <a href="firmware.html" data-t="navFw"></a>
+    <a href="diagnostics.html" aria-current="page" data-t="navDiag"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug-toolkit/releases/latest" data-t="navSetup"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug#readme" data-t="navDocs"></a>
+  </nav>
+  <span class="spacer"></span>
+  <button type="button" class="btn ghost sm" id="lang"></button>
+</header>
+<main class="page">
+  <div class="page-head"><div><h1 data-t="dTitle"></h1><p class="lead" data-t="dLead"></p></div></div>
+  <noscript><div class="banner danger">JavaScript is needed.</div></noscript>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".zip,.gz,.tgz,application/zip,application/gzip">
+    <svg class="i i-lg" aria-hidden="true"><use href="ui/icons.svg#upload"/></svg>
+    <span id="dropText" data-t="dDrop"></span>
+  </label>
+  <p class="hint" data-t="dWhere"></p>
+  <div id="err"></div>
+
+  <div id="view" class="stack" hidden style="--gap:14px;margin-top:18px">
+    <div class="stats" id="stats"></div>
+    <div id="note"></div>
+    <section class="card" id="problemsCard">
+      <div class="card-head"><h2 data-t="dProblems"></h2><span class="spacer"></span><span id="problemsPill"></span></div>
+      <div id="problems"></div>
+    </section>
+    <section class="card" id="historyCard">
+      <div class="card-head"><h2 data-t="dHistory"></h2><span class="spacer"></span><span class="dim small" id="historySpan"></span></div>
+      <div id="history"></div>
+    </section>
+    <div class="grid" style="--min:340px">
+      <section class="card" id="pluginsCard">
+        <div class="card-head"><h2 data-t="dPlugins"></h2></div>
+        <div id="plugins"></div>
+      </section>
+      <section class="card" id="consoleCard">
+        <div class="card-head"><h2 data-t="dConsole"></h2></div>
+        <div id="console"></div>
+      </section>
+    </div>
+    <section class="card" id="updateCard">
+      <div class="card-head"><h2 data-t="dUpdate"></h2><span class="spacer"></span><span id="updatePill"></span></div>
+      <div id="update"></div>
+    </section>
+    <section class="card" id="privacyCard">
+      <div class="card-head"><h2 data-t="dPrivacy"></h2></div>
+      <p class="lead" data-t="dPrivacyLead"></p>
+      <div id="privacy"></div>
+    </section>
+    <section class="card" id="filesCard">
+      <div class="card-head"><h2 data-t="dFiles"></h2><span class="spacer"></span><span class="dim small" id="filesCount"></span></div>
+      <div class="files">
+        <div class="filelist" id="files" role="listbox" aria-labelledby="filesCard"></div>
+        <div class="fileview">
+          <div class="cluster"><b class="mono small" id="fileName"></b><span class="spacer"></span><input class="input" id="filter" type="search" data-t-ph="dFilter" aria-label="filter" style="max-width:220px"></div>
+          <pre class="logs" id="fileText"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="footnote" data-t="footer"></p>
+</main>
+</body>
+</html>

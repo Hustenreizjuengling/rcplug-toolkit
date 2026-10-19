@@ -75,7 +75,7 @@ docs/                documentation
 | CI | every push and pull request | `make check` (gofmt, vet also as Windows code, race tests, shellcheck, doc links), the tests with the minimum Go version, the flash and setup tests on a Windows runner, the installer end-to-end test with rcplug (once rcplug is public) and the release files as an artifact |
 | Development build | every push to `main` | the pre-release **dev** ("Development build"): the Windows zip with `rcplug-setup.exe` and `rcplug-flash.exe`, the setup programs for macOS and Linux, the firmware tool and the wizard as `<version>-dev.<run>`, replaced by every push. The Windows zip contains rcplug's development build once rcplug is public |
 | Release | a tag `v<version>`, or a click | see below |
-| Web pages | after each release, daily, or a click | builds the pages of the **latest release** (never unreleased code) with RØDE's current firmware list and publishes them on GitHub Pages |
+| Web pages | after each release, pushes to `main` that change the pages, daily, or a click | builds the site from the **latest release** (never unreleased code) with RØDE's current firmware list and publishes it on GitHub Pages; `/next/` is a preview built from `main` for testing (a banner on every page, not indexed, no downloads), like the *Development build* |
 | Security | every push, pull request and weekly | `govulncheck` (known vulnerabilities in the Go standard library and in code the programs use); CodeQL code scanning, once the repository is public |
 | Dependabot | weekly | pull requests for new versions of the GitHub Actions |
 

@@ -102,7 +102,7 @@ rcplug-flash <dir> --flash     stage, then flash and reboot (asks first)
 | `--dir D` | install directory on the device (default: the existing installation, else `/usr/local/rcplug`) |
 | `--payload P` | device tree or `rcplug-*-aarch64.tar.gz` to install (default: the newest tarball next to the wizard) |
 | `--plugin DIR` | install or update one plugin directory into an existing installation (repeatable) |
-| `--diagnostics` | download a diagnostics bundle to the current folder; works even when the web interface does not respond (then it saves the raw logs as `.tar.gz`) |
+| `--diagnostics` | download a diagnostics bundle to the current folder; works even when the web interface does not respond (then it saves the raw logs as `.tar.gz`). Either can be looked at on the [diagnostics page](https://hustenreizjuengling.github.io/rcplug-toolkit/diagnostics.html) |
 | `--out FILE` | where `--diagnostics` saves the bundle |
 | `--uninstall` | stop rcplug and remove it, including plugin data |
 | `--yes`, `-y` | do not ask for confirmation |

@@ -65,3 +65,34 @@ a.tool:hover { text-decoration: none; border-color: rgba(52, 211, 153, .45); tra
 #result:empty { display: none; }
 textarea.input { height: auto; padding: 9px 11px; resize: vertical; }
 .drop.off { opacity: .55; pointer-events: none; }
+
+/* ---- diagnostics */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.stats .stat { padding: 14px 16px; }
+.stats .stat .value { font-size: 19px; overflow-wrap: anywhere; }
+.prob summary { cursor: pointer; padding: 6px 0; }
+.prob pre { margin: 4px 0 10px; }
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { fill: var(--text-3); font-size: 10px; font-family: var(--mono); }
+.chart polyline { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.chart .cpu { stroke: var(--info); } .chart .rode { stroke: var(--warn); } .chart .rcplug { stroke: var(--accent); } .chart .ram { stroke: var(--violet); stroke-dasharray: 4 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: 12.5px; color: var(--text-2); }
+.legend .item { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 14px; height: 3px; border-radius: 2px; }
+.legend i.cpu { background: var(--info); } .legend i.rode { background: var(--warn); } .legend i.rcplug { background: var(--accent); } .legend i.ram { background: var(--violet); }
+.privrow { padding: 10px 0; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.privrow:first-child { border-top: 0; padding-top: 0; }
+.files { display: grid; grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); gap: 14px; }
+.filelist { display: flex; flex-direction: column; max-height: 520px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px; }
+.fileitem { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; border: 0; border-radius: 6px; background: none; color: var(--text-2); text-align: left; cursor: pointer; font-size: 12px; }
+.fileitem:hover { background: var(--surface-2); color: var(--text); }
+.fileitem[aria-selected="true"] { background: var(--accent-soft); color: var(--text); }
+.fileitem .mono { overflow-wrap: anywhere; }
+.fileview { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.fileview .logs { max-height: 480px; min-height: 120px; }
+@media (max-width: 720px) { .files { grid-template-columns: minmax(0, 1fr); } .filelist { max-height: 200px; } }
+
+/* a preview build (sitegen -preview) */
+.preview-banner { padding: 8px max(18px, calc((100% - 1080px) / 2 + 28px)); background: var(--warn-soft); border-bottom: 1px solid rgba(245, 176, 65, .4); color: var(--text); font-size: 12.5px; }
+.preview-banner a { color: var(--warn); }

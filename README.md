@@ -37,6 +37,8 @@ data or your productions. Do not use it during a show that must not fail.
 [prepare the firmware in your browser](https://hustenreizjuengling.github.io/rcplug-toolkit/firmware.html). The page runs the toolkit's own
 patcher (as WebAssembly) and can make an SSH key for you; RØDE's firmware and your key
 stay on your computer. Flashing and installing rcplug still need the setup program.
+A diagnostics file can be [looked at in the browser](https://hustenreizjuengling.github.io/rcplug-toolkit/diagnostics.html)
+too, with what to review before you share it.
 
 1. **Download** the toolkit for your computer from the [releases](../../releases):
    - Windows 10/11: `rcplug-toolkit-<version>-windows.zip`, unpack it.
