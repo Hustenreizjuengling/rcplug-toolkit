@@ -57,6 +57,7 @@ type Result struct {
 	RootHome    string
 	Image       *fwimage.Info // what the input image says it is
 	InputMD5    bool          // the input matched its .md5 sidecar
+	InputDigest string        // the input's MD5
 }
 
 // Build creates the flashable archive from a stock firmware image. Before
@@ -64,6 +65,71 @@ type Result struct {
 // one (as RØDE ships it), and that it identifies as the chosen model. An
 // image for another model is refused even with Force.
 func Build(o Options) (*Result, error) {
+	outPath := filepath.Join(o.OutDir, StagedName)
+	if a, err := os.Stat(o.Input); err == nil {
+		if b, err := os.Stat(outPath); err == nil && os.SameFile(a, b) {
+			return nil, fmt.Errorf("the output %s would replace the input image; choose another output folder", outPath)
+		}
+	}
+	so := StreamOptions{Model: o.Model, PublicKeys: o.PublicKeys, EnablePasswordAuth: o.EnablePasswordAuth,
+		Force: o.Force, Context: o.Context, Name: o.Input, ForceHint: " (rcplug-cfw --force proceeds anyway)"}
+	if want, side, ok := sidecarMD5(o.Input); ok {
+		so.ExpectMD5, so.ExpectFrom = want, "its checksum file "+side
+	}
+	// The output folder and file appear once the checks passed and there is
+	// something to write, as before the build could stream.
+	out := &lazyFile{dir: o.OutDir, path: outPath + ".tmp"}
+	defer os.Remove(out.path)
+	res, err := BuildTo(so, FileSource(o.Input), out)
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return nil, err
+	}
+	tmp := out.path
+	if err := os.Rename(tmp, outPath); err != nil {
+		return nil, err
+	}
+	res.ArchivePath = outPath
+	res.MD5Path = filepath.Join(o.OutDir, MD5Name)
+	if err := os.WriteFile(res.MD5Path, []byte(MD5Line(o.MD5Format, res.Digest)+"\n"), 0o644); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// StreamOptions controls a build from a Source into a writer (BuildTo); the
+// browser version of the toolkit uses it.
+type StreamOptions struct {
+	Model              string   // device the image must be for ("" = "duo")
+	PublicKeys         []string // OpenSSH public key lines to add to root
+	EnablePasswordAuth bool     // also allow password logins
+	Force              bool     // proceed with an image that names no known model
+	Context            context.Context
+	// ExpectMD5 is the image's checksum as RØDE publishes it ("" = none);
+	// ExpectFrom names where it came from, Name the image, both for errors.
+	ExpectMD5, ExpectFrom, Name string
+	// ForceHint ends the errors that Force would get past (the command
+	// line names its flag).
+	ForceHint string
+	// Checked, if set, is called once the image passed the checks and
+	// before anything is written; an error stops the build.
+	Checked func(r *Result) error
+}
+
+// MD5Line is archive.md5's content for a digest; {hash} and {name} expand
+// in format ("" = "{hash}").
+func MD5Line(format, digest string) string {
+	if format == "" {
+		format = "{hash}"
+	}
+	return strings.NewReplacer("{hash}", digest, "{name}", StagedName).Replace(format)
+}
+
+// BuildTo checks the image from src as Build does and writes the flashable
+// archive (archive.tar.gz) to w; Result.Digest is its MD5.
+func BuildTo(o StreamOptions, src Source, w io.Writer) (*Result, error) {
 	modelID := o.Model
 	if modelID == "" {
 		modelID = "duo"
@@ -83,64 +149,66 @@ func Build(o Options) (*Result, error) {
 	if len(o.PublicKeys) == 0 && !o.EnablePasswordAuth {
 		return nil, fmt.Errorf("nothing to do: give a public key or enable password auth")
 	}
-	md5Format := o.MD5Format
-	if md5Format == "" {
-		md5Format = "{hash}"
+	name := o.Name
+	if name == "" {
+		name = "the image"
 	}
-
 	ctx := o.Context
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	scan, err := scanImage(ctx, o.Input)
+	scan, err := scanImage(ctx, src, name)
 	if err != nil {
 		return nil, err
 	}
 	inputMD5 := false
-	if want, side, ok := sidecarMD5(o.Input); ok {
+	if want := strings.ToLower(strings.TrimSpace(o.ExpectMD5)); want != "" {
 		if want != scan.md5 {
-			return nil, fmt.Errorf("%s does not match its checksum file %s (md5 %s, expected %s); the file is damaged", o.Input, side, scan.md5, want)
+			from := o.ExpectFrom
+			if from == "" {
+				from = "its checksum"
+			}
+			return nil, fmt.Errorf("%s does not match %s (md5 %s, expected %s); the file is damaged", name, from, scan.md5, want)
 		}
 		inputMD5 = true
 	}
 	if err := scan.info.Check(model, ""); err != nil && !(o.Force && errors.Is(err, fwimage.ErrUnknownModel)) {
 		if errors.Is(err, fwimage.ErrUnknownModel) {
-			return nil, fmt.Errorf("%w (rcplug-cfw --force proceeds anyway)", err)
+			return nil, fmt.Errorf("%w%s", err, o.ForceHint)
 		}
 		return nil, err
 	}
 	if scan.passwd == "" && !o.Force {
-		return nil, fmt.Errorf("%s has no etc/passwd; this does not look like a root filesystem (rcplug-cfw --force proceeds anyway)", o.Input)
+		return nil, fmt.Errorf("%s has no etc/passwd; this does not look like a root filesystem%s", name, o.ForceHint)
 	}
 	home := scan.rootHome()
 	sshDir := path.Join(home, ".ssh")
 	authKeys := path.Join(sshDir, "authorized_keys")
 
-	if err := os.MkdirAll(o.OutDir, 0o755); err != nil {
-		return nil, err
-	}
-	outPath := filepath.Join(o.OutDir, StagedName)
-	if a, err := os.Stat(o.Input); err == nil {
-		if b, err := os.Stat(outPath); err == nil && os.SameFile(a, b) {
-			return nil, fmt.Errorf("the output %s would replace the input image; choose another output folder", outPath)
-		}
-	}
-	tmp := outPath + ".tmp"
-	f, err := os.Create(tmp)
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(tmp)
 	hash := md5.New()
 	// Compress like the stock image (maximum level, Unix). Go's deflate is a
 	// little less tight than GNU gzip, so the result is ~2% larger than the
 	// stock 1.7.6 image; RØDE's own 1.7.3 image is larger still.
-	gz, _ := gzip.NewWriterLevel(io.MultiWriter(f, hash), gzip.BestCompression)
+	gz, _ := gzip.NewWriterLevel(io.MultiWriter(w, hash), gzip.BestCompression)
 	gz.OS = 3
 	tw := tar.NewWriter(gz)
 
-	res := &Result{RootHome: home, Image: scan.info, InputMD5: inputMD5}
-	err = eachEntry(ctx, o.Input, func(hdr *tar.Header, r io.Reader) error {
+	res := &Result{RootHome: home, Image: scan.info, InputMD5: inputMD5, InputDigest: scan.md5}
+	if o.Checked != nil {
+		if err := o.Checked(res); err != nil {
+			return nil, err
+		}
+	}
+	// The second pass reads the image again: it must be the same bytes the
+	// checks saw (a file changed meanwhile, or a reader that slipped).
+	in, err := src()
+	if err != nil {
+		return nil, err
+	}
+	defer in.Close()
+	inHash := md5.New()
+	raw := io.TeeReader(fwimage.ContextReader(ctx, in), inHash)
+	err = eachEntryFrom(raw, func(hdr *tar.Header, r io.Reader) error {
 		name := normalize(hdr.Name)
 		switch {
 		case len(o.PublicKeys) > 0 && name == authKeys && hdr.Typeflag == tar.TypeReg:
@@ -178,22 +246,18 @@ func Build(o Options) (*Result, error) {
 		}
 		res.KeysAdded = len(o.PublicKeys)
 	}
-	for _, c := range []io.Closer{tw, gz, f} {
+	for _, c := range []io.Closer{tw, gz} {
 		if err := c.Close(); err != nil {
 			return nil, err
 		}
 	}
-	if err := os.Rename(tmp, outPath); err != nil {
+	if _, err := io.Copy(io.Discard, raw); err != nil {
 		return nil, err
 	}
-
+	if got := hex.EncodeToString(inHash.Sum(nil)); got != scan.md5 {
+		return nil, fmt.Errorf("%s changed while it was being read (md5 %s, then %s)", name, scan.md5, got)
+	}
 	res.Digest = hex.EncodeToString(hash.Sum(nil))
-	res.ArchivePath = outPath
-	res.MD5Path = filepath.Join(o.OutDir, MD5Name)
-	md5Line := strings.NewReplacer("{hash}", res.Digest, "{name}", StagedName).Replace(md5Format)
-	if err := os.WriteFile(res.MD5Path, []byte(md5Line+"\n"), 0o644); err != nil {
-		return nil, err
-	}
 	return res, nil
 }
 
@@ -271,3 +335,30 @@ func enablePassword(body []byte) []byte {
 }
 
 func isSSHDConfig(name string) bool { return strings.HasPrefix(path.Base(name), "sshd_config") }
+
+// lazyFile creates its folder and file on the first write.
+type lazyFile struct {
+	dir, path string
+	f         *os.File
+}
+
+func (l *lazyFile) Write(p []byte) (int, error) {
+	if l.f == nil {
+		if err := os.MkdirAll(l.dir, 0o755); err != nil {
+			return 0, err
+		}
+		f, err := os.Create(l.path)
+		if err != nil {
+			return 0, err
+		}
+		l.f = f
+	}
+	return l.f.Write(p)
+}
+
+func (l *lazyFile) Close() error {
+	if l.f == nil {
+		return nil
+	}
+	return l.f.Close()
+}

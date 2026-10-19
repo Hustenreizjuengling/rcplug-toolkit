@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Prepare the firmware · rcplug</title>
+<meta name="description" content="Add your SSH key to the RØDECaster Duo's stock firmware, in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2334d399%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22/%3E%3Cpath d=%22M8 15.5v-4M12 15.5V8.5M16 15.5v-6%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="ui/rcplug.css">
+<link rel="stylesheet" href="site.css">
+<script type="module" src="js/firmware.js"></script>
+</head>
+<body>
+<header class="site-top">
+  <a class="brand" href="./"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#logo"/></svg><b>rcplug</b></a>
+  <nav aria-label="rcplug">
+    <a href="firmware.html" aria-current="page" data-t="navFw"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug-toolkit/releases/latest" data-t="navSetup"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug#readme" data-t="navDocs"></a>
+  </nav>
+  <span class="spacer"></span>
+  <button type="button" class="btn ghost sm" id="lang"></button>
+</header>
+<main class="page narrow">
+  <div class="page-head"><div><h1 data-t="title"></h1><p class="lead" data-t="lead"></p></div></div>
+  <div class="banner warn"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#alert"/></svg><div data-t="risk"></div></div>
+  <noscript><div class="banner danger">JavaScript is needed.</div></noscript>
+  <div class="banner danger" id="unsupported" hidden><svg class="i" aria-hidden="true"><use href="ui/icons.svg#alert"/></svg><div data-t="unsupported"></div></div>
+
+  <section class="card step" id="s1">
+    <div class="card-head"><span class="num">1</span><h2 data-t="s1"></h2></div>
+    <p class="lead" data-t="s1lead"></p>
+    <div id="releases" class="stack" style="--gap:8px"></div>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".gz,.tar.gz,application/gzip">
+      <svg class="i i-lg" aria-hidden="true"><use href="ui/icons.svg#upload"/></svg>
+      <span id="dropText" data-t="drop"></span>
+    </label>
+  </section>
+
+  <section class="card step" id="s2">
+    <div class="card-head"><span class="num">2</span><h2 data-t="s2"></h2></div>
+    <p class="lead" data-t="s2lead"></p>
+    <div class="seg" role="radiogroup" id="keyMode">
+      <button type="button" role="radio" data-mode="new" aria-checked="true" data-t="keyNew"></button>
+      <button type="button" role="radio" data-mode="own" aria-checked="false" data-t="keyOwn"></button>
+    </div>
+    <div id="keyNewBox" class="stack" style="margin-top:14px">
+      <div class="cluster"><button type="button" class="btn" id="gen"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#lock"/></svg><span data-t="gen"></span></button><span class="dim small" id="fp"></span></div>
+      <div id="keyFiles" class="cluster" hidden>
+        <a class="btn primary sm" id="privDl" download="rodecaster"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#download"/></svg><span data-t="privDl"></span></a>
+        <a class="btn sm" id="pubDl" download="rodecaster.pub"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#download"/></svg><span data-t="pubDl"></span></a>
+      </div>
+      <p class="hint" data-t="keepKey"></p>
+    </div>
+    <div id="keyOwnBox" hidden style="margin-top:14px">
+      <textarea class="input mono" id="pub" rows="3" spellcheck="false" style="width:100%" data-t-ph="pubPh"></textarea>
+      <p class="hint" id="pubState" data-t="pubHint"></p>
+    </div>
+  </section>
+
+  <section class="card step" id="s3">
+    <div class="card-head"><span class="num">3</span><h2 data-t="s3"></h2></div>
+    <p class="lead" data-t="s3lead"></p>
+    <button type="button" class="btn primary lg" id="go" disabled><svg class="i" aria-hidden="true"><use href="ui/icons.svg#box"/></svg><span data-t="go"></span></button>
+    <div class="progress" id="prog" hidden><div class="spread small"><span id="progText"></span><span class="dim num" id="progPct"></span></div><div class="bar"><i id="progBar" style="width:0%"></i></div></div>
+    <div id="result"></div>
+  </section>
+
+  <section class="card step" id="s4">
+    <div class="card-head"><span class="num">4</span><h2 data-t="s4"></h2></div>
+    <div class="lead" data-t-html="s4lead"></div>
+  </section>
+  <p class="footnote" data-t="footer"></p>
+</main>
+</body>
+</html>

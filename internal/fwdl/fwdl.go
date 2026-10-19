@@ -361,6 +361,15 @@ func checkImage(p string, m Model, version string) (*fwimage.Info, error) {
 	return in, nil
 }
 
+// Checksum reads the MD5 RØDE publishes for rel.
+func Checksum(ctx context.Context, c *http.Client, rel Release) (string, error) {
+	u, err := normalizeURL(rel.MD5URL)
+	if err != nil {
+		return "", err
+	}
+	return fetchMD5(ctx, c, u)
+}
+
 func fetchMD5(ctx context.Context, c *http.Client, u string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()

@@ -18,15 +18,15 @@ RCPLUG         ?= ../rcplug
 RCPLUG_VERSION ?= $(shell cat $(RCPLUG)/VERSION 2>/dev/null)
 PAYLOAD        ?= $(RCPLUG)/dist/rcplug-$(RCPLUG_VERSION)-aarch64.tar.gz
 
-.PHONY: help all check fmt fmt-check vet lint test test-race test-windows installer-test docs-check \
-        build package clean
+.PHONY: help all check fmt fmt-check vet lint test test-race test-wasm web-test test-windows installer-test docs-check \
+        build package site clean
 
 help: ## show this help
 	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 
 all: check package ## run all checks and build the release files
 
-check: fmt-check vet test-race lint docs-check ## everything CI runs (except the Windows and installer tests)
+check: fmt-check vet test-race test-wasm web-test lint docs-check ## everything CI runs (except the Windows and installer tests)
 
 fmt: ## format the Go code
 	gofmt -w .
@@ -34,9 +34,10 @@ fmt: ## format the Go code
 fmt-check: ## fail if Go code is not formatted
 	@out="$$(gofmt -l .)"; if [ -n "$$out" ]; then echo "not gofmt'ed:"; echo "$$out"; exit 1; fi
 
-vet: ## go vet, also as Windows code (it has its own flash path)
+vet: ## go vet, also as Windows code (it has its own flash path) and as WebAssembly (the web pages' patcher)
 	$(GO) vet ./...
 	GOOS=windows $(GO) vet ./...
+	GOOS=js GOARCH=wasm $(GO) vet ./cmd/rcplug-web ./internal/cfw ./internal/fwimage
 
 lint: ## shellcheck the shell scripts
 	shellcheck $(SHELL_SCRIPTS)
@@ -49,6 +50,20 @@ test: ## unit tests
 
 test-race: ## unit tests with the race detector
 	$(GO) test -race ./...
+
+# Go's runner for WebAssembly takes at most 8 KB of environment: run it with
+# just what go needs (its runner moved to lib/wasm in Go 1.24).
+test-wasm: ## the patcher's own tests compiled to WebAssembly, under Node (needs node)
+	@root="$$($(GO) env GOROOT)"; run="$$root/lib/wasm/go_js_wasm_exec"; [ -x "$$run" ] || run="$$root/misc/wasm/go_js_wasm_exec"; \
+	env -i PATH="$$PATH" HOME="$$HOME" TMPDIR="$${TMPDIR:-/tmp}" GOPATH="$$($(GO) env GOPATH)" GOMODCACHE="$$($(GO) env GOMODCACHE)" \
+	  GOCACHE="$$($(GO) env GOCACHE)" GOPROXY="$$($(GO) env GOPROXY)" GOFLAGS="$$($(GO) env GOFLAGS)" GOTOOLCHAIN="$$($(GO) env GOTOOLCHAIN)" \
+	  GOOS=js GOARCH=wasm $(GO) test -exec="$$run" ./internal/cfw ./internal/fwimage
+
+web-test: ## the web pages' tests (needs node and ssh-keygen)
+	node --test tools/webtest/*.test.mjs
+
+site: ## build the web pages into $(DIST)/site, as GitHub Pages serves them
+	$(GO) run ./tools/sitegen -out $(DIST)/site
 
 test-windows: ## flash and setup tests as Windows binaries under Wine (needs wine)
 	GOOS=windows GOARCH=amd64 $(GO) test -exec wine ./internal/flash ./cmd/rcplug-setup

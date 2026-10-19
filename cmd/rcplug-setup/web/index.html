@@ -5,73 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>rcplug setup</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ctext y=%2213%22 font-size=%2214%22%3E%E2%9A%99%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="ui/rcplug.css">
 <style>
-  :root{
-    --bg:#0d1015; --panel:#151a21; --panel2:#1c232c; --panel3:#232c37; --line:#2a333f;
-    --fg:#e7edf3; --muted:#9aa8b6; --dim:#7d8a97; --accent:#19c37d; --accent-ink:#04261a;
-    --amber:#e3a008; --red:#f85149; --blue:#2f81f7; --radius:12px;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .top{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-  .top .logo{font-size:22px;color:var(--accent)} .top h1{font-size:16px;margin:0;font-weight:650}
-  .spacer{flex:1}
-  .pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:4px 12px}
-  .pill .dot{width:9px;height:9px;border-radius:50%;background:var(--dim)}
-  .pill.ok{color:var(--fg)} .pill.ok .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-  .pill.bad{color:#ffb3ae;border-color:var(--red)} .pill.bad .dot{background:var(--red)}
-  main{max-width:860px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
-  .card.off{opacity:.55;pointer-events:none}
-  .card h2{margin:0 0 2px;font-size:16px} .card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
-  .step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--panel3);color:var(--muted);font-size:12px;margin-right:8px}
-  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
-  input[type=text],select{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
-  .sub{font-size:13px;font-weight:650;margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--fg)}
-  .sub:first-of-type{border-top:0;padding-top:0;margin-top:4px}
-  .hint{font-size:12px;color:var(--dim);margin:6px 0 0} .hint.ok{color:var(--accent)} .hint.err{color:#ffb3ae}
-  select option:disabled{color:var(--dim)}
-  .bar{margin-top:12px;height:8px;border-radius:4px;background:var(--panel3);overflow:hidden}
-  .bar>div{height:100%;width:0;background:var(--accent);transition:width .3s}
-  .barText{font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
-  .filerow{display:flex;gap:8px} .filerow input{flex:1;min-width:0;font-family:var(--mono);font-size:12px}
+  /* rcplug's shared look (ui/rcplug.css) plus this window's own parts. */
+  .top{display:flex;align-items:center;gap:10px;height:56px;padding:0 18px;background:rgba(11,14,18,.92);backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+  .top .logo{width:22px;height:22px;color:var(--accent);flex:none} .top h1{font-size:15px;margin:0;font-weight:650;white-space:nowrap}
+  #statusText{overflow:hidden;text-overflow:ellipsis}
+  .pill.bad{background:var(--danger-soft);color:#ff9e9a}
+  main{max-width:880px;margin:0 auto;padding:22px 18px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+  .card{padding:18px 20px}
+  .card.off{opacity:.5;pointer-events:none}
+  .card h2{display:flex;align-items:center;gap:10px;margin:0 0 4px;font-size:16px}
+  .card .desc{color:var(--text-2);font-size:13.5px;margin:0 0 14px;max-width:70ch}
+  .step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700;flex:none}
+  label{display:block;font-size:12.5px;color:var(--text-2);margin:12px 0 5px;font-weight:550}
+  input[type=text],select{width:100%;height:36px;background:var(--bg-2);color:var(--text);border:1px solid var(--border-2);border-radius:var(--radius-sm);padding:0 11px;transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
+  input[type=text]::placeholder{color:var(--text-3)}
+  input[type=text]:focus,select:focus{outline:none;border-color:rgba(52,211,153,.6);box-shadow:0 0 0 3px rgba(52,211,153,.15)}
+  select{appearance:none;padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,var(--text-2) 50%),linear-gradient(135deg,var(--text-2) 50%,transparent 50%);background-position:calc(100% - 15px) 15px,calc(100% - 10px) 15px;background-size:5px 5px;background-repeat:no-repeat}
+  select option:disabled{color:var(--text-3)}
+  .sub{font-size:13.5px;font-weight:650;margin:20px 0 0;padding-top:16px;border-top:1px solid var(--border);color:var(--text)}
+  .hint{font-size:12.5px;color:var(--text-3);margin:6px 0 0} .hint.ok{color:var(--accent)} .hint.err{color:#ff9e9a}
+  .bar{margin-top:14px;height:8px} .bar>div{height:100%;width:0;background:var(--accent);border-radius:6px;transition:width .3s var(--ease)}
+  .barText{font-size:12px;color:var(--text-2);margin-top:5px;font-variant-numeric:tabular-nums}
+  .filerow{display:flex;gap:8px;align-items:center} .filerow input{flex:1;min-width:0;font-family:var(--mono);font-size:12.5px}
   .filerow select{flex:1;min-width:0;width:auto} .filerow #fwOther{flex:0 0 140px}
-  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--fg);border-radius:8px;padding:8px 14px}
-  button:hover{border-color:var(--blue)} button:disabled{opacity:.5;cursor:default}
-  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-  button.danger{color:var(--red);border-color:var(--red);background:transparent}
-  button.small{padding:5px 10px;font-size:13px}
-  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
-  .sw{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--fg);cursor:pointer;margin-top:12px}
-  .log{margin-top:12px;background:#0a0d12;border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:#c9d4df}
-  .banner{border:1px solid var(--amber);background:#2a2110;color:#ffe2a3;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px}
-  .banner a{color:#ffe2a3} .ok{color:var(--accent)} .err{color:#ffb3ae} .muted{color:var(--muted)} .mono{font-family:var(--mono)}
-  a{color:var(--blue)}
-  /* file picker */
-  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:0;width:min(640px,94vw);max-height:80vh}
-  dialog::backdrop{background:rgba(0,0,0,.55)}
-  .dlg-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
-  .dlg-h .cur{flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .roots{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line)}
-  .roots button{padding:3px 10px;font-size:12px}
+  .filerow .btn{height:36px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .log{margin-top:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font:12px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:#c7d1db}
+  .log.ok{border-color:rgba(52,211,153,.4)} .log.err{border-color:rgba(242,96,92,.45);color:#ffc9c6}
+  .banner a{color:inherit;text-decoration:underline}
+  .ok{color:var(--accent)} .err{color:#ff9e9a} .muted{color:var(--text-2)}
+  /* file picker and the flash confirmation */
+  dialog{width:min(640px,94vw);max-height:80vh}
+  .dlg-h{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+  .dlg-h .cur{flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .roots{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--border)}
   .listing{overflow:auto;max-height:46vh;padding:6px 8px}
-  .entry{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer}
-  .entry:hover{background:var(--panel3)} .entry .ic{width:18px;text-align:center} .entry .sz{margin-left:auto;color:var(--dim);font-size:11px}
-  .entry.dir{color:var(--fg)} .entry.file{color:var(--muted)}
-  .dlg-f{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)}
-  .dlg-b{padding:16px 18px} .dlg-b h3{margin:0 0 8px;font-size:16px} .dlg-b p{margin:0 0 10px;font-size:13px}
-  .dlg-b .mono{font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel2);border-radius:8px;padding:8px 10px}
-  button.danger:not(:disabled):hover{background:var(--red);color:#fff}
+  .entry{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer}
+  .entry:hover{background:var(--surface-2)} .entry .ic{width:18px;text-align:center} .entry .sz{margin-left:auto;color:var(--text-3);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .entry.dir{color:var(--text)} .entry.file{color:var(--text-2)}
+  .dlg-f{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 16px;border-top:1px solid var(--border)}
+  .dlg-b{padding:18px 20px} .dlg-b h3{margin:0 0 8px;font-size:16px} .dlg-b p{margin:0 0 10px;font-size:13.5px}
+  .dlg-b .mono{font-size:12px;color:var(--text-2);white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px}
+  .btn.danger:not(:disabled):hover{background:var(--danger);border-color:var(--danger);color:#fff}
   /* flash pre-flight checks */
-  .checks{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
-  .checks li{display:grid;grid-template-columns:18px 130px minmax(0,1fr);gap:8px;font-size:13px;align-items:baseline}
-  .checks li.ok>span:first-child{color:var(--accent)} .checks li.warn>span:first-child{color:var(--amber)} .checks li.err>span:first-child{color:var(--red)}
-  .checks .d{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-  .checks li.err .d{color:#ffb3ae}
-  @media (max-width:520px){
-    .top{flex-wrap:wrap;gap:8px;padding:10px 16px} .top h1{font-size:15px}
-    main{padding:12px 10px}
+  .checks{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:7px}
+  .checks li{display:grid;grid-template-columns:18px 140px minmax(0,1fr);gap:8px;font-size:13px;align-items:baseline}
+  .checks li.ok>span:first-child{color:var(--accent)} .checks li.warn>span:first-child{color:var(--warn)} .checks li.err>span:first-child{color:var(--danger)}
+  .checks .d{font-family:var(--mono);font-size:12px;color:var(--text-2);overflow-wrap:anywhere}
+  .checks li.err .d{color:#ff9e9a}
+  @media (max-width:560px){
+    .top{gap:8px;padding:0 12px} .top h1{font-size:14px}
+    main{padding:14px 10px 36px}
     .filerow{flex-wrap:wrap} .filerow input{flex:1 1 100%} .filerow #fwOther{flex:1 1 100%}
     .checks li{grid-template-columns:18px minmax(0,1fr)} .checks .d{grid-column:2}
   }
@@ -79,12 +65,12 @@
 </head>
 <body>
 <header class="top">
-  <span class="logo" aria-hidden="true">⚙</span>
+  <svg class="i logo" aria-hidden="true"><use href="ui/icons.svg#logo"/></svg>
   <h1>rcplug setup</h1>
   <span class="spacer"></span>
-  <span class="pill" id="status"><span class="dot"></span><span id="statusText"></span></span>
-  <button class="small" id="lang"></button>
-  <button class="small" id="quit"></button>
+  <span class="pill" id="status"><span id="statusText"></span></span>
+  <button class="btn ghost sm" id="lang"></button>
+  <button class="btn sm" id="quit"></button>
 </header>
 <main>
   <section class="card" id="cardConnect">
@@ -96,15 +82,15 @@
       <div style="flex:1;min-width:140px"><label for="user" data-t="user"></label><input type="text" id="user" value="root"></div>
     </div>
     <label data-t="keyFile"></label>
-    <div class="filerow"><input type="text" id="connKey" placeholder="~/.ssh/rodecaster"><button class="small" data-browse="connKey" data-mode="file" data-t="browse"></button></div>
-    <div class="row"><button class="primary" id="btnConnect" data-t="connect"></button></div>
+    <div class="filerow"><input type="text" id="connKey" placeholder="~/.ssh/rodecaster"><button class="btn sm" data-browse="connKey" data-mode="file" data-t="browse"></button></div>
+    <div class="row"><button class="btn primary" id="btnConnect" data-t="connect"></button></div>
     <div class="log" id="connLog" hidden></div>
   </section>
 
   <section class="card" id="cardCfw">
     <h2><span class="step">2</span><span data-t="cfwTitle"></span></h2>
     <p class="desc" data-t="cfwDesc"></p>
-    <div class="banner" id="cfwBanner" data-t="cfwBanner"></div>
+    <div class="banner warn"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#alert"/></svg><div id="cfwBanner" data-t="cfwBanner"></div></div>
     <label for="fwDevice" data-t="fwDevice"></label>
     <select id="fwDevice"></select>
     <p class="hint" id="devHint"></p>
@@ -113,20 +99,20 @@
     <div class="filerow"><select id="fwPick"></select><input type="text" id="fwOther" placeholder="1.7.3" hidden></div>
     <p class="hint" id="fwInfo"></p>
     <label data-t="fwDir"></label>
-    <div class="filerow"><input type="text" id="fwDir" placeholder="…"><button class="small" data-browse="fwDir" data-mode="dir" data-t="browse"></button></div>
-    <div class="row"><button class="primary" id="btnFw" data-t="fwDownload"></button><button class="small" id="btnFwCancel" data-t="cancel" hidden></button></div>
+    <div class="filerow"><input type="text" id="fwDir" placeholder="…"><button class="btn sm" data-browse="fwDir" data-mode="dir" data-t="browse"></button></div>
+    <div class="row"><button class="btn primary" id="btnFw" data-t="fwDownload"></button><button class="btn sm" id="btnFwCancel" data-t="cancel" hidden></button></div>
     <div class="bar" id="fwBar" hidden><div></div></div>
     <div class="barText" id="fwBarText" hidden></div>
     <div class="log" id="fwLog" hidden></div>
     <h3 class="sub" data-t="cfwKeyTitle"></h3>
     <label data-t="cfwRootfs"></label>
-    <div class="filerow"><input type="text" id="cfwIn" placeholder="rodecaster-duo-…-os.tar.gz"><button class="small" data-browse="cfwIn" data-mode="file" data-t="browse"></button></div>
+    <div class="filerow"><input type="text" id="cfwIn" placeholder="rodecaster-duo-…-os.tar.gz"><button class="btn sm" data-browse="cfwIn" data-mode="file" data-t="browse"></button></div>
     <p class="hint" id="cfwInInfo"></p>
     <label data-t="cfwKey"></label>
-    <div class="filerow"><input type="text" id="cfwKey" placeholder="~/.ssh/rodecaster.pub"><button class="small" data-browse="cfwKey" data-mode="file" data-t="browse"></button><button class="small" id="btnGenKey" data-t="genKey"></button></div>
+    <div class="filerow"><input type="text" id="cfwKey" placeholder="~/.ssh/rodecaster.pub"><button class="btn sm" data-browse="cfwKey" data-mode="file" data-t="browse"></button><button class="btn sm" id="btnGenKey" data-t="genKey"></button></div>
     <label data-t="cfwOut"></label>
-    <div class="filerow"><input type="text" id="cfwOut" placeholder="out/"><button class="small" data-browse="cfwOut" data-mode="dir" data-t="browse"></button></div>
-    <div class="row"><button class="primary" id="btnCfw" data-t="cfwBuild"></button></div>
+    <div class="filerow"><input type="text" id="cfwOut" placeholder="out/"><button class="btn sm" data-browse="cfwOut" data-mode="dir" data-t="browse"></button></div>
+    <div class="row"><button class="btn primary" id="btnCfw" data-t="cfwBuild"></button></div>
     <p class="hint err" id="cfwNoKeys" hidden></p>
     <div class="log" id="cfwLog" hidden></div>
   </section>
@@ -134,15 +120,15 @@
   <section class="card" id="cardFlash">
     <h2><span class="step">3</span><span data-t="flashTitle"></span></h2>
     <p class="desc" data-t="flashDesc"></p>
-    <div class="banner" data-t="flashBanner"></div>
+    <div class="banner warn"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#alert"/></svg><div data-t="flashBanner"></div></div>
     <p class="hint err" id="flashOS" hidden></p>
     <label data-t="flashDir"></label>
-    <div class="filerow"><input type="text" id="flashDir" placeholder="out/"><button class="small" data-browse="flashDir" data-mode="dir" data-t="browse"></button><button class="small" id="btnFlashCheck" data-t="flashCheck"></button></div>
+    <div class="filerow"><input type="text" id="flashDir" placeholder="out/"><button class="btn sm" data-browse="flashDir" data-mode="dir" data-t="browse"></button><button class="btn sm" id="btnFlashCheck" data-t="flashCheck"></button></div>
     <ul class="checks" id="flashChecks" hidden></ul>
     <p class="hint" id="flashState"></p>
     <div class="log" id="flashUdev" hidden></div>
     <p class="hint" data-t="flashHow"></p>
-    <div class="row"><button id="btnStage" data-t="flashStage" disabled></button><button class="danger" id="btnFlash" data-t="flashGo" disabled></button></div>
+    <div class="row"><button class="btn" id="btnStage" data-t="flashStage" disabled></button><button class="btn danger" id="btnFlash" data-t="flashGo" disabled></button></div>
     <div class="log" id="flashLog" hidden></div>
   </section>
 
@@ -150,13 +136,14 @@
     <h2><span class="step">4</span><span data-t="installTitle"></span></h2>
     <p class="desc" data-t="installDesc"></p>
     <label data-t="payload"></label>
-    <div class="filerow"><input type="text" id="payload" placeholder="rcplug-…-aarch64.tar.gz"><button class="small" data-browse="payload" data-mode="file" data-t="browse"></button></div>
+    <div class="filerow"><input type="text" id="payload" placeholder="rcplug-…-aarch64.tar.gz"><button class="btn sm" data-browse="payload" data-mode="file" data-t="browse"></button><button class="btn sm" id="btnLatest" data-t="latestRcplug"></button></div>
+    <p class="hint" data-t="payloadHint"></p>
     <div class="row">
-      <button class="primary" id="btnInstall" data-t="install"></button>
+      <button class="btn primary" id="btnInstall" data-t="install"></button>
       <span class="spacer"></span>
       <input type="text" id="pluginDir" placeholder="…/my-plugin" aria-label="plugin folder" style="flex:1;min-width:140px">
-      <button class="small" data-browse="pluginDir" data-mode="dir" data-t="browse"></button>
-      <button class="small" id="btnPlugin" data-t="addPlugin"></button>
+      <button class="btn sm" data-browse="pluginDir" data-mode="dir" data-t="browse"></button>
+      <button class="btn sm" id="btnPlugin" data-t="addPlugin"></button>
     </div>
     <div class="log" id="installLog" hidden></div>
   </section>
@@ -164,24 +151,24 @@
   <section class="card off" id="cardMore">
     <h2><span class="step">5</span><span data-t="moreTitle"></span></h2>
     <p class="desc" data-t="moreDesc"></p>
-    <div class="filerow"><input type="text" id="diagDir" placeholder="…"><button class="small" data-browse="diagDir" data-mode="dir" data-t="browse"></button><button class="small primary" id="btnDiag" data-t="diag"></button></div>
+    <div class="filerow"><input type="text" id="diagDir" placeholder="…"><button class="btn sm" data-browse="diagDir" data-mode="dir" data-t="browse"></button><button class="btn sm primary" id="btnDiag" data-t="diag"></button></div>
     <div class="row">
-      <button class="small" id="btnPushKey" data-t="pushKey"></button>
-      <button class="small" id="btnStop" data-t="stopRcplug"></button>
-      <button class="small" id="btnStart" data-t="startRcplug"></button>
-      <button class="small" id="btnResetAccess" data-t="resetAccess"></button>
+      <button class="btn sm" id="btnPushKey" data-t="pushKey"></button>
+      <button class="btn sm" id="btnStop" data-t="stopRcplug"></button>
+      <button class="btn sm" id="btnStart" data-t="startRcplug"></button>
+      <button class="btn sm" id="btnResetAccess" data-t="resetAccess"></button>
       <span class="spacer"></span>
-      <button class="small danger" id="btnUninstall" data-t="uninstall"></button>
+      <button class="btn sm danger" id="btnUninstall" data-t="uninstall"></button>
     </div>
     <div class="log" id="moreLog" hidden></div>
   </section>
 </main>
 
 <dialog id="picker">
-  <div class="dlg-h"><button class="small" id="pkUp">↑</button><span class="cur" id="pkCur"></span></div>
+  <div class="dlg-h"><button class="btn sm" id="pkUp">↑</button><span class="cur" id="pkCur"></span></div>
   <div class="roots" id="pkRoots"></div>
   <div class="listing" id="pkList"></div>
-  <div class="dlg-f"><span class="muted" id="pkHint" style="margin-right:auto;font-size:12px"></span><button id="pkCancel" data-t="cancel"></button><button class="primary" id="pkChoose" data-t="chooseFolder"></button></div>
+  <div class="dlg-f"><span class="muted" id="pkHint" style="margin-right:auto;font-size:12px"></span><button class="btn" id="pkCancel" data-t="cancel"></button><button class="btn primary" id="pkChoose" data-t="chooseFolder"></button></div>
 </dialog>
 
 <dialog id="flashDlg">
@@ -192,7 +179,7 @@
     <label for="flashWord" data-t="flashTypeWord"></label>
     <input type="text" id="flashWord" autocomplete="off" spellcheck="false" placeholder="flash">
   </div>
-  <div class="dlg-f"><button id="flashNo" data-t="cancel"></button><button class="danger" id="flashYes" data-t="flashNow" disabled></button></div>
+  <div class="dlg-f"><button class="btn" id="flashNo" data-t="cancel"></button><button class="btn danger" id="flashYes" data-t="flashNow" disabled></button></div>
 </dialog>
 
 <script>
@@ -214,7 +201,7 @@ const T = {
     fwLatest: 'Current release from RØDE:', fwOffline: 'Could not read RØDE’s firmware list:', fwHint: 'Tip: the fewest changes happen with the same version your device already runs (shown in its settings); older versions are still on RØDE’s server.',
     fwSaved: 'Saved and verified:', fwReused: 'Already downloaded and intact:', fwCancelled: 'Download cancelled.',
     cfwKeyTitle: 'b) Add your SSH key', cfwRootfs: 'Stock firmware (os.tar.gz)', cfwKey: 'Your SSH public key (.pub)', genKey: 'Generate key', cfwOut: 'Output folder', cfwBuild: 'Build image',
-    installTitle: 'Install or update rcplug', installDesc: 'Once SSH works, push rcplug to the device.', payload: 'Release package (rcplug-…-aarch64.tar.gz)', install: 'Install / update', addPlugin: 'Add plugin',
+    installTitle: 'Install or update rcplug', installDesc: 'Once SSH works, push rcplug to the device.', payload: 'Release package (rcplug-…-aarch64.tar.gz)', latestRcplug: 'Latest from GitHub', payloadHint: 'Empty: the newest package next to this program, otherwise rcplug\'s latest release from GitHub, checked against rcplug\'s signature like rcplug\'s own updates.', install: 'Install / update', addPlugin: 'Add plugin',
     moreTitle: 'Diagnostics and more', moreDesc: 'Download logs and device state, push a key, stop rcplug in an emergency (until it is started again or the device restarts), or remove it.', diag: 'Download diagnostics', pushKey: 'Add my SSH key to the device', uninstall: 'Uninstall rcplug', stopRcplug: 'Stop rcplug', startRcplug: 'Start rcplug', resetAccess: 'Remove the dashboard password', confirmResetAccess: 'Remove the password of the device\'s dashboard? Everyone on the network can then use it again until a new one is set.',
     connecting: 'connecting…', connected: 'connected', notConnected: 'not connected', failed: 'failed',
     working: 'working…', done: 'done', cancel: 'Cancel', chooseFolder: 'Choose this folder', pickFile: 'Pick a file', pickDir: 'Choose a folder',
@@ -247,7 +234,7 @@ const T = {
     fwLatest: 'Aktuelle Version von RØDE:', fwOffline: 'RØDEs Firmware-Liste ließ sich nicht lesen:', fwHint: 'Tipp: Am wenigsten ändert sich mit derselben Version, die dein Gerät schon hat (steht in seinen Einstellungen); ältere Versionen liegen weiter auf RØDEs Server.',
     fwSaved: 'Gespeichert und geprüft:', fwReused: 'Schon heruntergeladen und intakt:', fwCancelled: 'Download abgebrochen.',
     cfwKeyTitle: 'b) SSH-Schlüssel einfügen', cfwRootfs: 'Original-Firmware (os.tar.gz)', cfwKey: 'Dein öffentlicher SSH-Schlüssel (.pub)', genKey: 'Schlüssel erzeugen', cfwOut: 'Ausgabeordner', cfwBuild: 'Abbild erstellen',
-    installTitle: 'rcplug installieren oder aktualisieren', installDesc: 'Sobald SSH geht, rcplug aufs Gerät bringen.', payload: 'Release-Paket (rcplug-…-aarch64.tar.gz)', install: 'Installieren / aktualisieren', addPlugin: 'Plugin hinzufügen',
+    installTitle: 'rcplug installieren oder aktualisieren', installDesc: 'Sobald SSH geht, rcplug aufs Gerät bringen.', payload: 'Release-Paket (rcplug-…-aarch64.tar.gz)', latestRcplug: 'Neueste von GitHub', payloadHint: 'Leer: das neueste Paket neben diesem Programm, sonst rcplugs neueste Version von GitHub, geprüft gegen rcplugs Signatur wie rcplugs eigene Updates.', install: 'Installieren / aktualisieren', addPlugin: 'Plugin hinzufügen',
     moreTitle: 'Diagnose und mehr', moreDesc: 'Logs und Gerätezustand herunterladen, Schlüssel hinterlegen, rcplug im Notfall anhalten (bis es wieder gestartet wird oder das Gerät neu startet) oder entfernen.', diag: 'Diagnose herunterladen', pushKey: 'Meinen SSH-Schlüssel aufs Gerät legen', uninstall: 'rcplug deinstallieren', stopRcplug: 'rcplug anhalten', startRcplug: 'rcplug starten', resetAccess: 'Dashboard-Passwort entfernen', confirmResetAccess: 'Das Passwort des Dashboards auf dem Gerät entfernen? Dann kann es wieder jeder im Netzwerk benutzen, bis ein neues gesetzt ist.',
     connecting: 'verbinde…', connected: 'verbunden', notConnected: 'nicht verbunden', failed: 'fehlgeschlagen',
     working: 'arbeite…', done: 'fertig', cancel: 'Abbrechen', chooseFolder: 'Diesen Ordner wählen', pickFile: 'Datei wählen', pickDir: 'Ordner wählen',
@@ -362,6 +349,8 @@ $('#btnCfw').addEventListener('click', () =>
   }));
 $('#btnInstall').addEventListener('click', () => requireConn('#installLog') &&
   withButton($('#btnInstall'), '#installLog', () => api('install', { payload: $('#payload').value.trim() })));
+$('#btnLatest').addEventListener('click', () =>
+  withButton($('#btnLatest'), '#installLog', async () => { const d = await api('rcplug/latest', {}); if (d.path) $('#payload').value = d.path; return d; }));
 $('#btnPlugin').addEventListener('click', () => requireConn('#installLog') &&
   withButton($('#btnPlugin'), '#installLog', () => api('plugin', { dir: $('#pluginDir').value.trim() })));
 $('#btnDiag').addEventListener('click', () => requireConn('#moreLog') &&
@@ -616,7 +605,7 @@ async function loadDir(p) {
   pickPath = d.path;
   $('#pkCur').textContent = d.path;
   $('#pkRoots').innerHTML = '';
-  (d.roots || []).forEach((r) => { const b = document.createElement('button'); b.className = 'small'; b.textContent = r.name; b.onclick = () => loadDir(r.path); $('#pkRoots').appendChild(b); });
+  (d.roots || []).forEach((r) => { const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = r.name; b.onclick = () => loadDir(r.path); $('#pkRoots').appendChild(b); });
   const list = $('#pkList'); list.innerHTML = '';
   (d.dirs || []).forEach((e) => list.appendChild(entry(e, true)));
   if (pickMode === 'file') (d.files || []).forEach((e) => list.appendChild(entry(e, false)));

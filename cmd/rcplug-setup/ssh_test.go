@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -49,5 +51,19 @@ func TestSessionRefusesOptionLikeTargets(t *testing.T) {
 			continue
 		}
 		s.close()
+	}
+}
+
+// A key saved by a browser (0644 or 0664) becomes owner-only, as ssh wants.
+func TestProtectKey(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("no Unix permissions")
+	}
+	key := filepath.Join(t.TempDir(), "rodecaster")
+	os.WriteFile(key, []byte("-----BEGIN OPENSSH PRIVATE KEY-----\n"), 0o664)
+	os.Chmod(key, 0o664)
+	protectKey(key)
+	if fi, _ := os.Stat(key); fi.Mode().Perm() != 0o600 {
+		t.Fatalf("mode %v", fi.Mode().Perm())
 	}
 }

@@ -4,7 +4,40 @@ All notable changes. The format follows [Keep a Changelog](https://keepachangelo
 versions follow [Semantic Versioning](https://semver.org/) (before 1.0, minor versions
 may break compatibility).
 
-## 0.5.4 - Unreleased
+## 0.6.0 - Unreleased
+
+### Added
+- **The firmware step in the browser:** a [web page on GitHub
+  Pages](https://hustenreizjuengling.github.io/rcplug-toolkit/firmware.html) prepares the
+  firmware without installing anything. It links RØDE's current release (a file whose
+  checksum is none of RØDE's current releases is used only after you confirm it), makes
+  an Ed25519 SSH key in the browser (OpenSSH files) or takes your public key, and hands
+  out `archive.tar.gz` and `archive.md5`: byte for byte what `rcplug-cfw` writes, since
+  it is the same code compiled to WebAssembly. Nothing is uploaded; the pages have a
+  strict Content Security Policy and no cookies or tracking. They are built from the
+  latest release, and once a day for RØDE's list.
+- **rcplug from GitHub, checked:** with no `rcplug-<version>-aarch64.tar.gz` at hand,
+  installing fetches rcplug's latest release from GitHub, checked as rcplug checks its
+  own updates (a manifest signed with rcplug's release key, the package's size and
+  SHA-256). The setup window's install card has *Latest from GitHub* for the same on
+  request. Until now macOS and Linux users had to download the package themselves.
+
+### Fixed
+- **A damaged stock image is refused.** The patcher never read an image to the end of
+  its gzip stream, so damage that only its checksum (CRC-32) shows went unnoticed when
+  no checksum file lay next to it: the result was a valid-looking archive with a fresh
+  checksum. Now every read checks it, and the writing pass must read exactly the bytes
+  the checks saw. (Images downloaded by the toolkit were always checked against RØDE's
+  MD5.)
+- **Keys saved by a browser** (or copied around) are made readable by their owner
+  only before the setup program uses them on macOS and Linux; ssh refuses them otherwise.
+
+### Changed
+- **The setup window has rcplug's look:** the same colours, type, buttons, banners and
+  icons as rcplug's dashboard and console (from rcplug's SDK, `sdk/ui`), so the toolkit,
+  the device and the web pages read as one application.
+- The patcher reads the stock image as a stream twice (check, then write) instead of
+  needing a file, which the web page builds on; the command line behaves as before.
 
 ## 0.5.3 - 2026-10-18
 

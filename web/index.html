@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>rcplug in your browser</title>
+<meta name="description" content="Tools for rcplug and the RØDECaster Duo that run in your browser: prepare the firmware, get the setup program, read the documentation.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2334d399%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229.5%22/%3E%3Cpath d=%22M8 15.5v-4M12 15.5V8.5M16 15.5v-6%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="ui/rcplug.css">
+<link rel="stylesheet" href="site.css">
+<script type="module" src="js/home.js"></script>
+</head>
+<body>
+<header class="site-top">
+  <a class="brand" href="./"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#logo"/></svg><b>rcplug</b></a>
+  <nav aria-label="rcplug">
+    <a href="firmware.html" data-t="navFw"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug-toolkit/releases/latest" data-t="navSetup"></a>
+    <a href="https://github.com/Hustenreizjuengling/rcplug#readme" data-t="navDocs"></a>
+  </nav>
+  <span class="spacer"></span>
+  <button type="button" class="btn ghost sm" id="lang"></button>
+</header>
+<main class="page">
+  <section class="hero">
+    <h1 data-t="homeTitle"></h1>
+    <p class="lead" data-t="homeLead"></p>
+  </section>
+
+  <div class="tools">
+    <a class="card tool main" href="firmware.html">
+      <span class="tile"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#chip"/></svg></span>
+      <h2 data-t="cardFw"></h2><p data-t="cardFwText"></p>
+      <span class="go"><span data-t="open"></span><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#chevron-right"/></svg></span>
+    </a>
+    <a class="card tool" href="https://github.com/Hustenreizjuengling/rcplug-toolkit/releases/latest">
+      <span class="tile"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#download"/></svg></span>
+      <h2 data-t="cardSetup"></h2><p data-t="cardSetupText"></p>
+      <span class="go"><span data-t="downloads"></span><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#external"/></svg></span>
+    </a>
+    <a class="card tool" href="https://github.com/Hustenreizjuengling/rcplug#readme">
+      <span class="tile"><svg class="i" aria-hidden="true"><use href="ui/icons.svg#list"/></svg></span>
+      <h2 data-t="cardDocs"></h2><p data-t="cardDocsText"></p>
+      <span class="go"><span data-t="read"></span><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#external"/></svg></span>
+    </a>
+  </div>
+
+  <section class="section" id="dl" hidden>
+    <div class="section-head"><h2 data-t="dlTitle"></h2><span class="dim small num" id="dlVer"></span></div>
+    <div class="cluster" id="dlLinks"></div>
+    <p class="hint" data-t="dlHint"></p>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2 data-t="pathTitle"></h2></div>
+    <ol class="path">
+      <li><b data-t="p1"></b><span data-t="p1Text"></span></li>
+      <li><b data-t="p2"></b><span data-t="p2Text"></span></li>
+      <li><b data-t="p3"></b><span data-t="p3Text"></span></li>
+      <li><b data-t="p4"></b><span data-t="p4Text"></span></li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2 data-t="factsTitle"></h2></div>
+    <ul class="facts">
+      <li><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#lock"/></svg><span data-t="f1"></span></li>
+      <li><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#shield"/></svg><span data-t="f2"></span></li>
+      <li><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#box"/></svg><span data-t="f3"></span></li>
+      <li><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#alert"/></svg><span data-t="f4"></span></li>
+    </ul>
+  </section>
+
+  <p class="footnote"><span data-t="footer"></span> <a href="https://github.com/Hustenreizjuengling/rcplug-toolkit" data-t="source"></a></p>
+</main>
+</body>
+</html>

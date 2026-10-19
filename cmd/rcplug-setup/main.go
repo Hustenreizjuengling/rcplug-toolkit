@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,6 +35,7 @@ import (
 
 	"github.com/Hustenreizjuengling/rcplug-toolkit/installer"
 	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/fwimage"
+	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/rcdl"
 )
 
 var version = "dev"
@@ -195,6 +197,7 @@ func newSession(user, host, key string) (*session, error) {
 		"-o", "HostKeyAlgorithms=+ssh-rsa", "-o", "PubkeyAcceptedKeyTypes=+ssh-rsa",
 	}}
 	if key != "" {
+		protectKey(key)
 		s.opts = append(s.opts, "-i", key)
 	}
 	// One connection for all steps, so a password is asked for only once.
@@ -206,6 +209,18 @@ func newSession(user, host, key string) (*session, error) {
 		}
 	}
 	return s, nil
+}
+
+// protectKey makes a private key file readable by its owner only, as ssh
+// demands on macOS and Linux: a key saved by a browser (the web page makes
+// one) or copied around usually is not, and ssh would refuse it.
+func protectKey(key string) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	if fi, err := os.Stat(key); err == nil && fi.Mode().IsRegular() && fi.Mode().Perm()&0o077 != 0 {
+		_ = os.Chmod(key, fi.Mode().Perm()&0o700)
+	}
 }
 
 func (s *session) close() {
@@ -344,8 +359,12 @@ func (s *session) install(payload string) error {
 	if payload == "" {
 		payload = newestPayload()
 	}
-	if payload == "" {
-		return errors.New(tr("noPayload"))
+	if payload == "" { // none at hand: rcplug's latest release
+		p, err := latestPayload(s.out)
+		if err != nil {
+			return fmt.Errorf("%s %v", tr("noPayload"), err)
+		}
+		payload = p
 	}
 	if err := checkPayload(payload); err != nil {
 		return err
@@ -361,6 +380,31 @@ func (s *session) install(payload string) error {
 	}
 	fmt.Fprintln(s.out, tr("installing"))
 	return s.device(s.out, "install", "/tmp/rcplug-payload.tgz")
+}
+
+// latestPayload fetches the device package of rcplug's latest release from
+// GitHub into the user's cache folder, checked as rcplugd checks its own
+// updates: a manifest signed with rcplug's release key, and the package's
+// size and SHA-256 as it names them.
+func latestPayload(out io.Writer) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	c := rcdl.Client()
+	p, err := rcdl.Latest(ctx, c)
+	if err != nil {
+		return "", err
+	}
+	fmt.Fprintf(out, tr("fetchingRcplug")+"\n", p.Version)
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		dir = os.TempDir()
+	}
+	file, err := rcdl.Download(ctx, c, p, filepath.Join(dir, "rcplug-setup"))
+	if err != nil {
+		return "", err
+	}
+	fmt.Fprintln(out, tr("rcplugVerified"), file)
+	return file, nil
 }
 
 // newestPayload finds the newest release tarball next to the program or in

@@ -30,11 +30,21 @@ type imageScan struct {
 	md5      string
 }
 
+// Source opens the firmware image; it is read twice (a scan, then the
+// rewrite), so it must start from the beginning each time.
+type Source func() (io.ReadCloser, error)
+
+// FileSource reads the image from a file.
+func FileSource(file string) Source {
+	return func() (io.ReadCloser, error) { return os.Open(file) }
+}
+
 // scanImage reads the whole archive once, recording names, /etc/passwd, the
-// newest modification time and the image's model markers, and hashes the file.
-func scanImage(ctx context.Context, file string) (*imageScan, error) {
+// newest modification time and the image's model markers, and hashes the
+// file. what names the input in errors.
+func scanImage(ctx context.Context, src Source, what string) (*imageScan, error) {
 	s := &imageScan{members: map[string]bool{}}
-	f, err := os.Open(file)
+	f, err := src()
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +77,7 @@ func scanImage(ctx context.Context, file string) (*imageScan, error) {
 		return nil
 	})
 	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, tar.ErrHeader) {
-		return nil, fmt.Errorf("%s is truncated or not a firmware image (%v)", file, err)
+		return nil, fmt.Errorf("%s is truncated or not a firmware image (%v)", what, err)
 	}
 	if err != nil {
 		return nil, err
@@ -114,17 +124,8 @@ func rootHomeFromPasswd(body []byte) string {
 	return ""
 }
 
-// eachEntry calls fn for every tar entry of a gzipped archive. The reader is
-// valid only during the call.
-func eachEntry(ctx context.Context, file string, fn func(hdr *tar.Header, r io.Reader) error) error {
-	f, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return eachEntryFrom(fwimage.ContextReader(ctx, f), fn)
-}
-
+// eachEntryFrom calls fn for every tar entry of a gzipped archive, then
+// checks the archive's gzip checksum. The reader is valid only during the call.
 func eachEntryFrom(f io.Reader, fn func(hdr *tar.Header, r io.Reader) error) error {
 	gz, err := gzip.NewReader(f)
 	if err != nil {
@@ -135,6 +136,13 @@ func eachEntryFrom(f io.Reader, fn func(hdr *tar.Header, r io.Reader) error) err
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
+			// The gzip trailer's CRC-32 covers everything; only a read to
+			// the end of the stream checks it. A damaged image must not
+			// become a flashable archive with a fresh, valid checksum.
+			gz.Multistream(false)
+			if _, err := io.Copy(io.Discard, gz); err != nil {
+				return fmt.Errorf("the image is damaged: %w", err)
+			}
 			return nil
 		}
 		if err != nil {

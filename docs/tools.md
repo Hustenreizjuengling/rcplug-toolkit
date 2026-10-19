@@ -29,12 +29,18 @@ dashboard's password (rcplug 0.6.9 and later), for when it is forgotten and the 
 cannot confirm the buttons at the device; in the setup window *Remove the dashboard
 password*.
 
+Without a package at hand, `install` fetches rcplug's latest release from GitHub into
+the user's cache folder, checked as rcplug checks its own updates: the release's
+`release.json` must be signed with rcplug's release key, and the package must have the
+size and SHA-256 it names. The setup window's *Latest from GitHub* does the same on
+request (also when an older package lies next to the program).
+
 | Option | Meaning |
 |---|---|
 | `--host` | IP address or name of the device |
 | `--user` | SSH user (default `root`) |
 | `--key` | SSH private key |
-| `--payload` | rcplug release tarball `rcplug-<version>-aarch64.tar.gz` (default: the newest next to the program) |
+| `--payload` | rcplug release tarball `rcplug-<version>-aarch64.tar.gz` (default: the newest next to the program, otherwise rcplug's latest release from GitHub, see below) |
 | `--lang` | `de` or `en` (default: the system language) |
 | `--yes` | do not ask for confirmation |
 | `--version` | print the version |

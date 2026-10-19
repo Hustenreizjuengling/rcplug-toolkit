@@ -26,6 +26,7 @@ import (
 	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/flash"
 	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/fwdl"
 	"github.com/Hustenreizjuengling/rcplug-toolkit/internal/fwimage"
+	rcui "github.com/Hustenreizjuengling/rcplug/sdk/ui"
 )
 
 //go:embed web
@@ -123,6 +124,7 @@ func (g *gui) routes() http.Handler {
 	sub, _ := fs.Sub(webFS, "web")
 	mux := http.NewServeMux()
 	mux.Handle("GET /", http.FileServer(http.FS(sub)))
+	mux.Handle("GET /ui/", rcui.Handler("/ui/")) // rcplug's shared look
 	mux.HandleFunc("GET /api/env", g.guard(g.handleEnv))
 	mux.HandleFunc("GET /api/browse", g.guard(g.handleBrowse))
 	mux.HandleFunc("POST /api/connect", g.guard(g.handleConnect))
@@ -137,6 +139,7 @@ func (g *gui) routes() http.Handler {
 	mux.HandleFunc("GET /api/flash/check", g.guard(g.handleFlashCheck))
 	mux.HandleFunc("POST /api/flash/start", g.guard(g.handleFlashStart))
 	mux.HandleFunc("GET /api/flash/progress", g.guard(g.handleFlashProgress))
+	mux.HandleFunc("POST /api/rcplug/latest", g.guard(g.handleRcplugLatest))
 	mux.HandleFunc("POST /api/install", g.guard(g.sessionOp(func(s *session, r req) error { return s.install(r.Payload) })))
 	mux.HandleFunc("POST /api/plugin", g.guard(g.sessionOp(func(s *session, r req) error { return s.plugin(r.Dir) })))
 	mux.HandleFunc("POST /api/diagnostics", g.guard(g.handleDiagnostics))
@@ -308,6 +311,18 @@ func (g *gui) sessionOp(op func(*session, req) error) http.HandlerFunc {
 		}
 		writeJSON(w, resp)
 	}
+}
+
+// handleRcplugLatest fetches rcplug's latest release (see latestPayload) for
+// the install card's package field.
+func (g *gui) handleRcplugLatest(w http.ResponseWriter, r *http.Request) {
+	var buf bytes.Buffer
+	file, err := latestPayload(&buf)
+	resp := map[string]interface{}{"log": buf.String(), "path": file}
+	if err != nil {
+		resp["error"] = err.Error()
+	}
+	writeJSON(w, resp)
 }
 
 func (g *gui) handleConnect(w http.ResponseWriter, r *http.Request) {

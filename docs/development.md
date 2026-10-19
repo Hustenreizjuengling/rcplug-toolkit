@@ -25,13 +25,15 @@ package` in rcplug), so a Windows user gets everything in one download.
 cmd/rcplug-setup/    setup window (web/) and text menu
 cmd/rcplug-cfw/      firmware download and key insertion
 cmd/rcplug-flash/    flashing over USB
+cmd/rcplug-web/      the patcher for the web pages (WebAssembly)
+web/                 the web pages on GitHub Pages (built by tools/sitegen)
 internal/fwdl/       stock firmware download from RØDE (HTTPS, host allowlist, MD5)
 internal/fwimage/    the RØDECaster models and identifying an image
 internal/cfw/        adding SSH keys to an image without unpacking it
 internal/flash/      pre-flight checks and flashing: Linux drives the vendored scripts
                      in scripts/, Windows uses the Go port in native.go + *_windows.go
 installer/           wizard, device-side script, Windows text menu
-tools/               zip builder, installer test
+tools/               zip builder, installer test, site builder (sitegen), web tests
 docs/                documentation
 ```
 
@@ -46,12 +48,21 @@ docs/                documentation
   locally in a sandbox. `make installer-test` builds rcplug's device tree into
   `dist/rcplug/` (rcplug's own `dist/` stays untouched); the sandbox's dashboard uses
   port 18580 (`RCPLUG_TEST_PORT`).
+- **Web pages** (`make web-test`, `make test-wasm`): the pages' texts and references,
+  their Content Security Policy and the SSH keys they make (checked with `ssh-keygen`);
+  the patcher's own tests compiled to WebAssembly; and, in `internal/cfw`, the page's
+  module (`cmd/rcplug-web`) run under Node with an image as a Blob, whose archive must
+  be byte for byte the command line's (skipped without `node`).
+  `make site` builds the pages into `dist/site`; any static server shows them
+  (`python3 -m http.server -d dist/site`).
 - **Windows binaries under Wine** (`make test-windows`): a fresh Wine prefix needs
   about 750 MB.
 
 ## Conventions
 
-- Go standard library only, `gofmt`, `go vet` clean (also with `GOOS=windows`).
+- Go standard library only, plus rcplug's SDK for the shared look (`sdk/ui`, itself standard
+  library only); `gofmt`, `go vet` clean (also with `GOOS=windows` and, for the patcher,
+  `GOOS=js GOARCH=wasm`).
 - Code, comments and documentation in English. User interfaces in German and English.
 - The destructive flash command is only ever sent after an explicit confirmation.
 - Shell scripts that run on the device are POSIX sh (bash as `sh` on the Duo) and pass
@@ -64,6 +75,7 @@ docs/                documentation
 | CI | every push and pull request | `make check` (gofmt, vet also as Windows code, race tests, shellcheck, doc links), the tests with the minimum Go version, the flash and setup tests on a Windows runner, the installer end-to-end test with rcplug (once rcplug is public) and the release files as an artifact |
 | Development build | every push to `main` | the pre-release **dev** ("Development build"): the Windows zip with `rcplug-setup.exe` and `rcplug-flash.exe`, the setup programs for macOS and Linux, the firmware tool and the wizard as `<version>-dev.<run>`, replaced by every push. The Windows zip contains rcplug's development build once rcplug is public |
 | Release | a tag `v<version>`, or a click | see below |
+| Web pages | after each release, daily, or a click | builds the pages of the **latest release** (never unreleased code) with RØDE's current firmware list and publishes them on GitHub Pages |
 | Security | every push, pull request and weekly | `govulncheck` (known vulnerabilities in the Go standard library and in code the programs use); CodeQL code scanning, once the repository is public |
 | Dependabot | weekly | pull requests for new versions of the GitHub Actions |
 

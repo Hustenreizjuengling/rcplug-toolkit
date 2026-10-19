@@ -142,6 +142,13 @@ records, which nothing on the device reads.
 | `--force` | proceed with an input that has no `/etc/passwd` or names no known model; never with one for another model |
 | `--devices`, `--list`, `--inspect FILE` | show the known devices, RØDE's current releases, or what an image is for |
 
+**Or in the browser:** [the firmware page](https://hustenreizjuengling.github.io/rcplug-toolkit/firmware.html) does the same
+with the same code, compiled to WebAssembly: choose the stock image (the page links
+RØDE's current release; a file whose checksum is none of RØDE's current releases is
+used only after you confirm it), make a key there or paste your public key, and download
+the two files. Nothing is uploaded; the result is byte for
+byte what `rcplug-cfw` writes for the same image and key.
+
 ### 3. Flash over USB
 
 Both front ends first run the same checks, without sending anything to the
