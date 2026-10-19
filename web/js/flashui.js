@@ -6,7 +6,7 @@ import * as flash from './flash.js';
 import { t } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
-const st = { archive: null, dev: null, dir: null, step: 'a', sys: flash.system(), busy: false };
+const st = { archive: null, pick: null, dev: null, dir: null, step: 'a', sys: flash.system(), busy: false };
 let patcher = null;
 
 function log(line) {
@@ -65,11 +65,15 @@ export function setArchive(a) {
 }
 
 async function chooseFiles(list) {
-  const files = [...list];
-  const archive = files.find((f) => /\.gz$/i.test(f.name));
-  const md5 = files.find((f) => /\.md5$/i.test(f.name));
+  // Both at once or one after the other.
+  st.pick = flash.pairFiles(st.pick, [...list]);
+  const { archive, md5 } = st.pick;
   clear('#fSrcErr');
-  if (!archive || !md5) { fail('#fSrcErr', new Error(t('fPickBoth'))); return; }
+  if (!archive || !md5) {
+    $('#fSrcInfo').replaceChildren(Object.assign(document.createElement('p'), { className: 'hint', textContent: t('fPickOther', { name: (archive || md5).name, other: archive ? 'archive.md5' : 'archive.tar.gz' }) }));
+    return;
+  }
+  st.pick = null;
   st.busy = true;
   st.archive = null;
   update();
@@ -112,8 +116,6 @@ async function enterUpdate() {
 }
 
 // ---- c: the update disk
-// What an operating system calls the Duo's unlabelled FAT disk.
-const diskName = { windows: /^[A-Z]:\\?$/i, macos: /^(NO NAME|UNTITLED)$/i, linux: /^[0-9A-F]{4}-[0-9A-F]{4}$/i };
 
 async function copyToDisk() {
   clear('#fDiskErr');
@@ -122,8 +124,7 @@ async function copyToDisk() {
   try {
     const dir = await window.showDirectoryPicker({ id: 'rodecaster-update', mode: 'readwrite' });
     log(`update disk: “${dir.name}”`);
-    const want = diskName[st.sys];
-    if (want && !want.test(dir.name) && !confirm(t('fOddDisk', { name: dir.name }))) throw new Error(t('fNotUsed', { name: dir.name }));
+    if (!flash.looksLikeUpdateDisk(st.sys, dir.name) && !confirm(t('fOddDisk', { name: dir.name }))) throw new Error(t('fNotUsed', { name: dir.name }));
     const bar = $('#fBar');
     $('#fProg').hidden = false;
     log(`copying ${flash.STAGED} onto “${dir.name}”...`);

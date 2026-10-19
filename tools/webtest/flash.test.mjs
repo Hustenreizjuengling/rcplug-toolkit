@@ -117,3 +117,23 @@ test('the system decides how the disk is let go of', () => {
   assert.equal(flash.supported({ isSecureContext: true, navigator: { hid: {} }, showDirectoryPicker() {} }), true);
   assert.equal(flash.supported({ isSecureContext: true, navigator: {}, showDirectoryPicker() {} }), false);
 });
+
+test('the update disk is recognised by the name the browser gives it', () => {
+  // Chrome on Windows names a drive's top folder "\" (seen with a real Duo).
+  for (const name of ['\\', 'E:\\', 'e:']) assert.ok(flash.looksLikeUpdateDisk('windows', name), name);
+  for (const name of ['Downloads', 'E:\\firmware', '']) assert.ok(!flash.looksLikeUpdateDisk('windows', name), name);
+  assert.ok(flash.looksLikeUpdateDisk('macos', 'NO NAME'));
+  assert.ok(!flash.looksLikeUpdateDisk('macos', 'Macintosh HD'));
+  assert.ok(flash.looksLikeUpdateDisk('linux', '1A2B-3C4D'));
+  assert.ok(flash.looksLikeUpdateDisk('other', 'anything'));
+});
+
+test('the archive and its checksum file can be chosen together or one by one', () => {
+  const gz = { name: 'archive.tar.gz' }, md5 = { name: 'archive.md5' }, other = { name: 'notes.txt' };
+  assert.deepEqual(flash.pairFiles(null, [gz, md5]), { archive: gz, md5 });
+  const first = flash.pairFiles(null, [md5, other]);
+  assert.ok(!first.archive && first.md5 === md5, 'one of the two so far');
+  assert.deepEqual(flash.pairFiles(first, [gz]), { archive: gz, md5 });
+  const gz2 = { name: 'rodecaster-duo-1.7.6-os.tar.gz' };
+  assert.deepEqual(flash.pairFiles({ archive: gz, md5 }, [gz2]), { archive: gz2, md5 }, 'a new choice replaces the old one');
+});

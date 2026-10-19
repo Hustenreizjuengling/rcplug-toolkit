@@ -144,6 +144,30 @@ export async function mounted(dir) {
   }
 }
 
+// What an operating system calls the Duo's unlabelled FAT disk, as the
+// browser names the folder picked at its top: on Windows a backslash (seen
+// with Chrome and a real Duo; a drive letter as in E:\ is taken too), on
+// macOS "NO NAME", on Linux its volume serial.
+const diskNames = { windows: /^(\\|[A-Z]:\\?)$/i, macos: /^(NO NAME|UNTITLED)$/i, linux: /^[0-9A-F]{4}-[0-9A-F]{4}$/i };
+
+// looksLikeUpdateDisk says whether a picked folder is named like the
+// update disk on this system (unknown systems: yes).
+export function looksLikeUpdateDisk(sys, name) {
+  const want = diskNames[sys];
+  return !want || want.test(name);
+}
+
+// pairFiles adds files the visitor chose to those chosen before (one at a
+// time or both at once): the archive (.gz) and its checksum file (.md5).
+export function pairFiles(prev, files) {
+  const out = { archive: prev && prev.archive, md5: prev && prev.md5 };
+  for (const f of files) {
+    if (/\.gz$/i.test(f.name)) out.archive = f;
+    else if (/\.md5$/i.test(f.name)) out.md5 = f;
+  }
+  return out;
+}
+
 // checkPair checks the archive against its checksum file the way the device
 // will: the first word of archive.md5 must be the archive's MD5.
 export function checkPair(md5Text, digest) {

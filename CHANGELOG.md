@@ -14,7 +14,11 @@ may break compatibility).
   `U` only after typing `flash` and only to the Duo in update mode. Each step is
   logged like `rcplug-flash`. It takes the archive from step 3 or `archive.tar.gz`
   and `archive.md5` you choose (checked against each other, Duo firmware, your keys
-  shown). macOS gets a way to flash for the first time.
+  shown). macOS gets a way to flash for the first time. Tried on a Duo with Chrome on
+  Windows: the Duo in the chooser, `M` acknowledged, the update disk chosen, 161 MB
+  copied in half a minute and read back; the test stopped before `U`, which is sent
+  the same way as `M`. The archive and its checksum file can be chosen one after the other, and the drive's name as
+  Chrome gives it on Windows (`\`) no longer asks whether it is the right one.
 - `rcplug-cfw --inspect` names the fingerprints of the SSH keys an image holds, as
   `ssh-keygen -l` shows them.
 
