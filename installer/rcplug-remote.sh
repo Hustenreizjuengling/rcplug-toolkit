@@ -53,18 +53,19 @@ need_install() {
   [ -n "$dir" ] || { echo "rcplug is not installed" >&2; exit 3; }
 }
 
-# gentle FILE: the file's bytes on stdout, 64 KB every quarter of a second
-# (256 KB/s), with what was written so far flushed to storage after every
-# piece. Unpacked at full speed onto the device's storage, a plugin made the
-# Duo's USB audio drop out (the computer reset the device); rcplug's in-app
-# updates unpack the same gentle way since 0.6.5 and never did.
+# gentle FILE DIR: the file's bytes on stdout, 64 KB every quarter of a
+# second (256 KB/s), with what was written to DIR's file system so far
+# flushed to storage after every piece. The network, the storage and the USB
+# audio interface of a RØDECaster share the CPU's interrupt handling, and
+# large bursts on any of them made the Duo's USB audio drop out; rcplug's
+# in-app updates download and unpack at the same gentle pace.
 gentle() {
   size=$(wc -c < "$1") || return 1
   off=0
   while [ "$off" -lt "$size" ]; do
     dd if="$1" bs=65536 skip=$((off / 65536)) count=1 2>/dev/null || return 1
     off=$((off + 65536))
-    sync
+    sync -f "$2" 2>/dev/null || sync
     sleep 0.25
   done
 }
@@ -78,7 +79,7 @@ lowprio() {
 # unpack TGZ DIR: unpacks a tarball onto the device's storage, gently.
 unpack() {
   echo "rcplug: unpacking slowly, so the device's audio keeps running (about $(( $(wc -c < "$1") / 262144 + 1 )) s)"
-  gentle "$1" | lowprio tar -xzf - -C "$2"
+  gentle "$1" "$2" | lowprio tar -xzf - -C "$2"
 }
 
 cmd="${1:-}"

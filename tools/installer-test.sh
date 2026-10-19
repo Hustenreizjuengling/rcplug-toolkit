@@ -38,6 +38,8 @@ exec sh -c "\$*"
 FAKE
 chmod +x "$SB/bin/ssh"
 export PATH="$SB/bin:$PATH"
+# Uploads at full speed, except where the paced upload is tested.
+export RCPLUG_UPLOAD_RATE=0
 wizard() { "$REPO/installer/rcplug-wizard.sh" --host sandbox --yes --addr "127.0.0.1:$PORT" "$@"; }
 fail() { echo "FAIL: $*" >&2; [ -f "$SB/rcplug.log" ] && tail -20 "$SB/rcplug.log" >&2; exit 1; }
 api() { curl -fsS --max-time 3 "http://127.0.0.1:$PORT$1"; }
@@ -127,10 +129,10 @@ cp "$RCPLUG_REPO/examples/hello-sh/run.sh" "$big/run.sh"
 sed 's/"hello-sh"/"bigplug"/' "$RCPLUG_REPO/examples/hello-sh/plugin.json" > "$big/plugin.json"
 head -c 300000 /dev/urandom > "$big/blob.bin" # five pieces of 64 KB, not a multiple
 start=$(date +%s)
-wizard --plugin "$big" >/dev/null
+RCPLUG_UPLOAD_RATE=262144 wizard --plugin "$big" >/dev/null # sent at 256 KB/s, unpacked gently
 took=$(( $(date +%s) - start ))
 cmp -s "$big/blob.bin" "$SB/rcplug/plugins/bigplug/blob.bin" || fail "the bigger plugin arrived damaged"
-[ "$took" -ge 1 ] || fail "the plugin was unpacked at full speed (${took}s)"
+[ "$took" -ge 2 ] || fail "the plugin was sent or unpacked at full speed (${took}s)"
 
 if [ -n "$SETUP" ]; then
   echo "== rcplug-setup: update, status, plugin, diagnostics"

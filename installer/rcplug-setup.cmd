@@ -161,7 +161,9 @@ for %%F in ("%HERE%rcplug-*-aarch64.tar.gz") do call :pick_tgz "%%~fF" "%%~nxF"
 if not defined TGZ goto :no_tgz
 if %NTGZ% GTR 1 echo %T_MANYTGZ% %TGZ%
 echo %T_SEND% %TGZ% ...
-ssh %SSHOPTS% %TARGET% "cat > /tmp/rcplug-payload.tgz" < "%TGZ%"
+rem 2048 Kbit/s (256 KB/s): at the network's full speed the Duo's USB audio
+rem dropped out; rcplug's in-app updates download at the same rate.
+scp %SSHOPTS% -l 2048 "%TGZ%" %TARGET%:/tmp/rcplug-payload.tgz
 if errorlevel 1 goto :failed
 echo %T_INSTALL%
 rem install.sh prints the dashboard's address.
@@ -207,7 +209,7 @@ if errorlevel 1 goto :plugin_bad
 set "PTGZ=%TEMP%\rcplug-plugin-%PNAME%.tgz"
 tar -C "%PDIR%" -czf "%PTGZ%" .
 if errorlevel 1 goto :failed
-ssh %SSHOPTS% %TARGET% "cat > /tmp/rcplug-plugin-%PNAME%.tgz" < "%PTGZ%"
+scp %SSHOPTS% -l 2048 "%PTGZ%" %TARGET%:/tmp/rcplug-plugin-%PNAME%.tgz
 if errorlevel 1 goto :failed
 del "%PTGZ%" >nul 2>&1
 ssh %SSHOPTS% %TARGET% sh -s -- plugin %PNAME% /tmp/rcplug-plugin-%PNAME%.tgz < "%REMOTE%"

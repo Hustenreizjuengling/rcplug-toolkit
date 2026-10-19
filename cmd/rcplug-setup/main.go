@@ -30,6 +30,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -251,8 +252,54 @@ func (s *session) device(stdout io.Writer, args ...string) error {
 	return s.ssh(bytes.NewReader(installer.RemoteScript), stdout, words...)
 }
 
-func (s *session) upload(r io.Reader, remotePath string) error {
-	return s.ssh(r, s.out, "cat > "+shellQuote(remotePath))
+// upload copies size bytes from r to a file on the device, at uploadRate:
+// the network, the storage and the USB audio interface of a RØDECaster share
+// the CPU's interrupt handling at the same real-time priority, and a file
+// sent at the network's full speed made the Duo's USB audio drop out.
+// rcplug's in-app updates download at the same rate.
+func (s *session) upload(r io.Reader, size int64, remotePath string) error {
+	rate := uploadRate()
+	if rate > 0 {
+		fmt.Fprintf(s.out, tr("slowly")+"\n", size/rate+1)
+	}
+	return s.ssh(&pacedReader{r: r, rate: rate}, s.out, "cat > "+shellQuote(remotePath))
+}
+
+// uploadRate is 256 KB/s; tests set RCPLUG_UPLOAD_RATE (bytes a second, 0
+// for no limit).
+func uploadRate() int64 {
+	if v, err := strconv.ParseInt(os.Getenv("RCPLUG_UPLOAD_RATE"), 10, 64); err == nil && v >= 0 {
+		return v
+	}
+	return 256 << 10
+}
+
+// pacedReader passes r on in pieces of 16 KB at rate bytes a second (0: as
+// fast as it comes).
+type pacedReader struct {
+	r     io.Reader
+	rate  int64
+	start time.Time
+	done  int64
+}
+
+func (p *pacedReader) Read(b []byte) (int, error) {
+	if p.rate <= 0 {
+		return p.r.Read(b)
+	}
+	if p.start.IsZero() {
+		p.start = time.Now()
+	}
+	if len(b) > 16<<10 {
+		b = b[:16<<10]
+	}
+	due := p.start.Add(time.Duration(float64(p.done) / float64(p.rate) * float64(time.Second)))
+	if d := time.Until(due); d > 0 {
+		time.Sleep(d)
+	}
+	n, err := p.r.Read(b)
+	p.done += int64(n)
+	return n, err
 }
 
 // shellQuote makes s one word for the device's shell: ssh joins the words of
@@ -374,8 +421,12 @@ func (s *session) install(payload string) error {
 		return err
 	}
 	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
 	fmt.Fprintln(s.out, tr("sending")+" "+filepath.Base(payload)+" …")
-	if err := s.upload(f, "/tmp/rcplug-payload.tgz"); err != nil {
+	if err := s.upload(f, fi.Size(), "/tmp/rcplug-payload.tgz"); err != nil {
 		return err
 	}
 	fmt.Fprintln(s.out, tr("installing"))
@@ -510,7 +561,7 @@ func (s *session) plugin(dir string) error {
 		return err
 	}
 	remote := "/tmp/rcplug-plugin-" + name + ".tgz"
-	if err := s.upload(&buf, remote); err != nil {
+	if err := s.upload(&buf, int64(buf.Len()), remote); err != nil {
 		return err
 	}
 	return s.device(s.out, "plugin", name, remote)

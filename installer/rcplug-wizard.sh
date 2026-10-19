@@ -116,8 +116,33 @@ remote() {
 }
 # device runs a command of rcplug-remote.sh on the device.
 device() { remote sh -s -- "$@" < "$REMOTE_SH"; }
-# upload copies stdin to a file on the device.
-upload() { remote "cat > $(sq "$1")"; }
+# upload copies stdin to a file on the device, at about 256 KB/s: the
+# network, the storage and the USB audio interface of a RØDECaster share the
+# CPU's interrupt handling, and a file sent at the network's full speed made
+# the Duo's USB audio drop out (rcplug's in-app updates download at the same
+# rate). RCPLUG_UPLOAD_RATE (bytes a second, 0: no limit) is for tests.
+upload() {
+  local tmp rc
+  tmp="$(mktemp)" || return 1
+  cat > "$tmp" || { rm -f "$tmp"; return 1; }
+  paced "$tmp" | remote "cat > $(sq "$1")"
+  rc=$?
+  rm -f "$tmp"
+  return $rc
+}
+
+# paced FILE: the file's bytes on stdout in pieces of 16 KB at the upload rate.
+paced() {
+  local rate="${RCPLUG_UPLOAD_RATE:-262144}" size n=0 pause
+  if [ "$rate" -le 0 ]; then cat "$1"; return; fi
+  size=$(wc -c < "$1")
+  pause=$(LC_ALL=C awk -v r="$rate" 'BEGIN { printf "%.3f", 16384 / r }') # a point, whatever the language
+  while [ $((n * 16384)) -lt "$size" ]; do
+    dd if="$1" bs=16384 skip=$n count=1 2>/dev/null || return 1
+    n=$((n + 1))
+    sleep "$pause"
+  done
+}
 
 # pack writes a gzipped tar of a folder to stdout, owned by root as on the
 # device (the device's tar, run as root, restores the owners it finds).

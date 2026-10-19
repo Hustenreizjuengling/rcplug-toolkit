@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The words sent to the device's shell arrive there exactly as given.
@@ -65,5 +67,41 @@ func TestProtectKey(t *testing.T) {
 	protectKey(key)
 	if fi, _ := os.Stat(key); fi.Mode().Perm() != 0o600 {
 		t.Fatalf("mode %v", fi.Mode().Perm())
+	}
+}
+
+// Uploads go out in pieces of 16 KB at the given rate, whole.
+func TestPacedReader(t *testing.T) {
+	data := make([]byte, 100<<10+123)
+	for i := range data {
+		data[i] = byte(i * 7)
+	}
+	p := &pacedReader{r: bytes.NewReader(data), rate: 1 << 20} // 1 MB/s: 0.1 s
+	start := time.Now()
+	buf := make([]byte, 64<<10)
+	var got []byte
+	for {
+		n, err := p.Read(buf)
+		if n > 16<<10 {
+			t.Fatalf("a piece of %d bytes", n)
+		}
+		got = append(got, buf[:n]...)
+		if err != nil {
+			break
+		}
+	}
+	if took := time.Since(start); took < 80*time.Millisecond {
+		t.Fatalf("100 KB at 1 MB/s took %v", took)
+	}
+	if !bytes.Equal(got, data) {
+		t.Fatal("the data changed on the way")
+	}
+	t.Setenv("RCPLUG_UPLOAD_RATE", "")
+	if uploadRate() != 256<<10 {
+		t.Fatal("default rate")
+	}
+	t.Setenv("RCPLUG_UPLOAD_RATE", "0")
+	if uploadRate() != 0 {
+		t.Fatal("no limit for tests")
 	}
 }
