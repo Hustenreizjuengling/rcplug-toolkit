@@ -146,8 +146,10 @@ records, which nothing on the device reads.
 with the same code, compiled to WebAssembly: choose the stock image (the page links
 RØDE's current release; a file whose checksum is none of RØDE's current releases is
 used only after you confirm it), make a key there or paste your public key, and download
-the two files. Nothing is uploaded; the result is byte for
-byte what `rcplug-cfw` writes for the same image and key.
+the two files. Nothing is uploaded; the result is what `rcplug-cfw` of the same release
+writes for the same image and key, byte for byte (the files inside the archive are the
+same with any version; the compressed bytes can differ between builds with different Go
+releases).
 
 ### 3. Flash over USB
 
