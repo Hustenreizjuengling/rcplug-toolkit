@@ -161,3 +161,14 @@ func normalize(name string) string {
 	name = strings.TrimSuffix(name, "/")
 	return path.Clean(name)
 }
+
+// Inspect reads an image once and returns what it is and its MD5; a damaged
+// image (its gzip checksum) is an error. The web page checks an archive
+// with it before flashing.
+func Inspect(ctx context.Context, src Source) (*fwimage.Info, string, error) {
+	s, err := scanImage(ctx, src, "the image")
+	if err != nil {
+		return nil, "", err
+	}
+	return s.info, s.md5, nil
+}

@@ -74,6 +74,43 @@
   <section class="card step" id="s4">
     <div class="card-head"><span class="num">4</span><h2 data-t="s4"></h2></div>
     <div class="lead" data-t-html="s4lead"></div>
+    <p class="hint" id="fNo" hidden data-t="fNo"></p>
+    <div id="flashBox" class="flashbox" hidden>
+      <div class="card-head"><h3 data-t="fTitle"></h3><span class="tag warn" data-t="fUntested"></span></div>
+      <p class="lead" data-t="fLead"></p>
+      <ol class="fsteps">
+        <li id="fA"><b data-t="fA"></b>
+          <div id="fSrcInfo"></div>
+          <label class="btn sm file"><input type="file" id="fFiles" multiple accept=".gz,.md5"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#upload"/></svg><span data-t="fPick"></span></label>
+          <div id="fSrcErr"></div>
+        </li>
+        <li id="fB"><b data-t="fB"></b>
+          <ul class="checklist"><li data-t="fB1"></li><li data-t="fB2"></li><li data-t="fB3"></li><li id="fLinux" hidden data-t-html="fB4"></li></ul>
+          <button type="button" class="btn" id="fM"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#link"/></svg><span data-t="fMBtn"></span></button>
+          <div id="fMErr"></div>
+        </li>
+        <li id="fC"><b data-t="fC"></b>
+          <p class="hint" data-t="fCText"></p>
+          <button type="button" class="btn" id="fDisk"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#download"/></svg><span data-t="fDiskBtn"></span></button>
+          <div class="progress" id="fProg" hidden><div class="spread small"><span data-t="fCopying"></span><span class="dim num" id="fPct"></span></div><div class="bar"><i id="fBar" style="width:0%"></i></div></div>
+          <div id="fDiskErr"></div>
+        </li>
+        <li id="fD"><b data-t="fD"></b>
+          <p class="hint" id="fLetText"></p>
+          <button type="button" class="btn" id="fLet" data-t="fLetDone"></button>
+          <div id="fLetErr"></div>
+        </li>
+        <li id="fE"><b data-t="fE"></b>
+          <p class="hint" data-t="fEText"></p>
+          <div class="cluster"><input class="input" id="fWord" autocomplete="off" spellcheck="false" placeholder="flash" data-t-aria="fWordLabel" style="max-width:140px">
+            <button type="button" class="btn danger" id="fU"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#power"/></svg><span data-t="fUBtn"></span></button></div>
+          <div id="fUErr"></div>
+          <p class="hint" data-t="fStop"></p>
+        </li>
+      </ol>
+      <div class="cluster"><span class="small dim" data-t="fLogTitle"></span><span class="spacer"></span><button type="button" class="btn sm ghost" id="fCopyLog" data-t="fCopyLog"></button></div>
+      <pre class="logs" id="fLog" hidden></pre>
+    </div>
   </section>
   <p class="footnote" data-t="footer"></p>
 </main>

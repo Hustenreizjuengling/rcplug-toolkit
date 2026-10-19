@@ -10,6 +10,8 @@
 //	prepare({file, md5, keys, password, force, onChunk(Uint8Array), onProgress(phase, done, total),
 //	         onChecked({md5, model, version}) → boolean or Promise<boolean>})
 //	    → Promise<{digest, md5Line, keysAdded, sshdPatched, rootHome, inputChecked, inputMD5, model, version}>
+//	inspect({file, onProgress(done, total)})
+//	    → Promise<{md5, model, modelName, version, keys, vendorKeys, keyFingerprints}>
 //	checkKey(line) → "" or the reason the public key is not usable
 //	version → the toolkit's version
 //
@@ -121,16 +123,49 @@ func (c *chunkWriter) flush() {
 	c.buf = c.buf[:0]
 }
 
-func prepare(_ js.Value, args []js.Value) any {
-	o := args[0]
+// inspect reads an archive once, as the flash checks do before anything is
+// sent to the device: what it is, its keys, its MD5 (a damaged one fails).
+func inspect(_ js.Value, args []js.Value) any {
+	return async(func() (any, error) {
+		o := args[0]
+		file := o.Get("file")
+		if !file.Truthy() {
+			return nil, errors.New("no file")
+		}
+		size := int64(file.Get("size").Float())
+		progress := o.Get("onProgress")
+		src := func() (io.ReadCloser, error) {
+			return &blobReader{blob: file, size: size, progress: func(n int64) {
+				if progress.Truthy() {
+					progress.Invoke(float64(n), float64(size))
+				}
+			}}, nil
+		}
+		in, sum, err := cfw.Inspect(context.Background(), src)
+		if err != nil {
+			return nil, err
+		}
+		fps := make([]any, len(in.KeyFingerprints))
+		for i, f := range in.KeyFingerprints {
+			fps[i] = f
+		}
+		return map[string]any{"md5": sum, "model": in.ModelID, "modelName": in.ModelName, "version": in.Version,
+			"keys": in.Keys, "vendorKeys": in.VendorKeys, "keyFingerprints": fps}, nil
+	})
+}
+
+// async runs fn in a goroutine and settles a promise with its result; a
+// panic (a failing JavaScript callback) rejects it instead of ending the
+// program with the promise open.
+func async(fn func() (any, error)) js.Value {
 	promise, resolve, reject := newPromise()
 	go func() {
-		defer func() { // a failing callback must not end the patcher with the promise open
+		defer func() {
 			if r := recover(); r != nil {
 				reject.Invoke(js.Global().Get("Error").New(fmt.Sprint("the patcher failed: ", r)))
 			}
 		}()
-		res, err := run(o)
+		res, err := fn()
 		if err != nil {
 			reject.Invoke(js.Global().Get("Error").New(err.Error()))
 			return
@@ -138,6 +173,10 @@ func prepare(_ js.Value, args []js.Value) any {
 		resolve.Invoke(res)
 	}()
 	return promise
+}
+
+func prepare(_ js.Value, args []js.Value) any {
+	return async(func() (any, error) { return run(args[0]) })
 }
 
 func run(o js.Value) (any, error) {
@@ -230,6 +269,7 @@ func main() {
 	js.Global().Set("rcplugWeb", map[string]any{
 		"version": version,
 		"prepare": js.FuncOf(prepare),
+		"inspect": js.FuncOf(inspect),
 		"checkKey": js.FuncOf(func(_ js.Value, args []js.Value) any {
 			if len(args) == 0 {
 				return "no key"

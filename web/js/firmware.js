@@ -3,6 +3,7 @@
 // compiled to WebAssembly) adding the key. Nothing leaves the browser.
 import { generate, supported, fingerprint } from './sshkey.js';
 import { t, applyTexts, setupLang } from './i18n.js';
+import { initFlash, setArchive } from './flashui.js';
 
 const $ = (s) => document.querySelector(s);
 const state = {
@@ -48,6 +49,7 @@ function invalidate() {
   for (const k of ['outUrl', 'md5Url']) if (state[k]) { URL.revokeObjectURL(state[k]); state[k] = ''; }
   $('#result').replaceChildren();
   $('#prog').hidden = true;
+  setArchive(null);
   update();
 }
 
@@ -205,15 +207,17 @@ $('#go').addEventListener('click', async () => {
       <div class="cluster"><a class="btn primary" download="archive.tar.gz"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#download"/></svg>archive.tar.gz</a>
         <a class="btn" download="archive.md5"><svg class="i i-sm" aria-hidden="true"><use href="ui/icons.svg#download"/></svg>archive.md5</a></div>`;
     res.querySelector('.banner div').textContent = t('done', { s: Math.round((Date.now() - t0) / 1000) });
+    const fp = await fingerprint(key);
     const kv = [[t('kModel'), (r.model || '?') + (r.version ? ' ' + r.version : '')],
       [t('kInput'), known ? t('inputKnown', { v: known.version }) : t('inputUnknown')],
-      [t('kKey'), (await fingerprint(key)) || '?'], [t('kOut'), r.digest]];
+      [t('kKey'), fp || '?'], [t('kOut'), r.digest]];
     res.querySelector('dl').replaceChildren(...kv.flatMap(([k, v]) => [Object.assign(document.createElement('dt'), { textContent: k }), Object.assign(document.createElement('dd'), { textContent: v })]));
     const links = res.querySelectorAll('a');
     links[0].href = state.outUrl;
     links[1].href = state.md5Url;
     $('#result').replaceChildren(res);
     $('#progText').textContent = t('ready');
+    setArchive({ blob: out, md5Line: r.md5Line, digest: r.digest, modelName: r.model, version: r.version, keyFps: fp ? [fp] : [] });
   } catch (e) {
     chunks.length = 0;
     $('#prog').hidden = true;
@@ -234,4 +238,5 @@ $('#go').addEventListener('click', async () => {
   }
   update();
   loadReleases();
+  initFlash(loadPatcher);
 })();

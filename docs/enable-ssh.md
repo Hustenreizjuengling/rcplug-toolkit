@@ -235,6 +235,26 @@ sudo udevadm control --reload && sudo udevadm trigger
 `flash_cfw.py out/ --flash` does the same thing. rcplug-flash just bundles and
 drives it so you do not need a separate checkout.)
 
+**In the browser** (Chrome or Edge on a computer; not tested on a device yet, so
+for now only in the [preview](https://hustenreizjuengling.github.io/rcplug-toolkit/next/firmware.html)),
+step 4 of the firmware page does the same run over WebHID and the File System Access
+API: it checks the archive like the checks above (it must match `archive.md5` and be
+Duo firmware; one without a key of yours gets a warning), then asks for the Duo in its
+normal mode (`M`, report 1, 63 bytes, the `A` ack on report 2), for the update disk
+(a folder picker: choose the new, empty drive itself), copies both files and reads
+back their sizes and the checksum file, and finally, after you type `flash`, asks for
+the Duo in update mode (`004f`) and sends it `U`. What the browser cannot do: tell
+which USB device a drive belongs to, and dismount it. So it uses only an empty drive,
+asks before one whose name is not that of an unlabelled drive (`E:\`, `NO NAME`,
+`1234-ABCD`), waits ten seconds on Windows (which writes removable drives through)
+and has you eject the drive in the Finder on macOS (unmount it on Linux, or run
+`sync`); the Duo itself compares the archive with `archive.md5` before it flashes,
+so a copy that did not arrive whole is not flashed. Each step is logged with the
+same lines as `rcplug-flash`. On Linux the browser needs the same udev rule as the
+setup program (shown on the page). The flow is tested in a browser against a
+simulated Duo and update disk (the reports byte for byte, the order, the files), not
+yet against a real one.
+
 ### Connect
 
 The device gets a new SSH host key after flashing, so clear any stale entry:

@@ -6,6 +6,18 @@ may break compatibility).
 
 ## 0.7.1 - Unreleased
 
+### Added
+- **Flashing in the browser:** step 4 of the firmware page flashes the prepared
+  archive over USB from Chrome or Edge (WebHID and the File System Access API), on
+  Windows, macOS and Linux, with the setup program's procedure and checks: `M` to the
+  Duo in its normal mode, the archive copied onto the empty update disk and read back,
+  `U` only after typing `flash` and only to the Duo in update mode. Each step is
+  logged like `rcplug-flash`. It takes the archive from step 3 or `archive.tar.gz`
+  and `archive.md5` you choose (checked against each other, Duo firmware, your keys
+  shown). macOS gets a way to flash for the first time.
+- `rcplug-cfw --inspect` names the fingerprints of the SSH keys an image holds, as
+  `ssh-keygen -l` shows them.
+
 ## 0.7.0 - 2026-10-19
 
 ### Added

@@ -96,3 +96,20 @@ textarea.input { height: auto; padding: 9px 11px; resize: vertical; }
 /* a preview build (sitegen -preview) */
 .preview-banner { padding: 8px max(18px, calc((100% - 1080px) / 2 + 28px)); background: var(--warn-soft); border-bottom: 1px solid rgba(245, 176, 65, .4); color: var(--text); font-size: 12.5px; }
 .preview-banner a { color: var(--warn); }
+
+/* ---- flashing in the browser (firmware page, step 4) */
+.flashbox { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.flashbox h3 { font-size: 15px; }
+.fsteps { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; counter-reset: fstep; }
+.fsteps > li { counter-increment: fstep; position: relative; display: grid; gap: 8px; justify-items: start; padding: 12px 14px 12px 46px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-2); opacity: .55; transition: opacity .2s var(--ease), border-color .2s var(--ease); }
+.fsteps > li > * { max-width: 100%; }
+.fsteps > li::before { content: counter(fstep, lower-alpha); position: absolute; left: 14px; top: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); color: var(--text); font-size: 12px; font-weight: 700; }
+.fsteps > li.active { opacity: 1; border-color: rgba(52, 211, 153, .45); }
+.fsteps > li.done { opacity: .85; }
+.fsteps > li.done::before { content: "✓"; background: var(--accent-soft); color: var(--accent); }
+.fsteps .progress, .fsteps .banner, .fsteps .kv { width: 100%; margin: 0; }
+.checklist { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 13px; display: grid; gap: 4px; }
+.checklist code { overflow-wrap: anywhere; }
+.btn.file { position: relative; overflow: hidden; }
+.btn.file input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+#fLog { max-height: 240px; margin-top: 8px; }

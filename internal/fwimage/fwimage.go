@@ -110,6 +110,9 @@ type Info struct {
 	// Keys counts the keys in every .ssh/authorized_keys that are not RØDE's
 	// own. Flashing an image without one gives no SSH access.
 	Keys int `json:"keys"`
+	// KeyFingerprints are those keys' SHA-256 fingerprints, as ssh-keygen -l
+	// shows them, so someone can tell their own key.
+	KeyFingerprints []string `json:"keyFingerprints,omitempty"`
 	// VendorKeys counts RØDE's own keys (stock 1.7.3 has two in root's
 	// authorized_keys; 1.7.6 has none).
 	VendorKeys int `json:"vendorKeys"`
@@ -169,10 +172,14 @@ func (s *Scanner) Observe(hdr *tar.Header, r io.Reader) error {
 			if line = strings.TrimSpace(line); line == "" || strings.HasPrefix(line, "#") {
 				continue
 			}
-			if vendorKeys[keyFingerprint(line)] {
+			fp := keyFingerprint(line)
+			if vendorKeys[fp] {
 				s.info.VendorKeys++
 			} else {
 				s.info.Keys++
+				if fp != "" {
+					s.info.KeyFingerprints = append(s.info.KeyFingerprints, fp)
+				}
 			}
 		}
 		err = rerr
@@ -285,6 +292,9 @@ func (c *ctxReader) Read(p []byte) (int, error) {
 // RØDE's own)".
 func (in *Info) KeysText() string {
 	s := fmt.Sprintf("%d SSH key(s)", in.Keys)
+	if len(in.KeyFingerprints) > 0 {
+		s += " (" + strings.Join(in.KeyFingerprints, ", ") + ")"
+	}
 	if in.Keys == 0 {
 		s = "no SSH key of yours"
 	}

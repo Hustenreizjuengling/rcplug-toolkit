@@ -142,6 +142,14 @@ func TestCountsAuthorizedKeys(t *testing.T) {
 	if in.Keys != 2 {
 		t.Fatalf("prepared image: Keys = %d, want 2", in.Keys)
 	}
+	// A readable key is named by its fingerprint, so its owner can tell it.
+	files["home/root/.ssh/authorized_keys"] = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL7vY+SWORihUKc4UVEZdJ4UjtRbB+ukyY79uOSbC9Si test\n"
+	if in, err = Inspect(image(t, files)); err != nil {
+		t.Fatal(err)
+	}
+	if len(in.KeyFingerprints) != 1 || in.KeyFingerprints[0] != "SHA256:RXs1nqf/WSw8k6h49Cdzfc/3tFeaP7GLiUNfzpPiG+s" {
+		t.Fatalf("fingerprints %v", in.KeyFingerprints)
+	}
 }
 
 func TestKeyFingerprint(t *testing.T) {
